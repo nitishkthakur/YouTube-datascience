@@ -18,21 +18,23 @@ import numpy as np
 import pytest
 import soundfile as sf
 
+from dsanim import env as dsenv
+
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
-TINYTEX = Path.home() / "Library" / "TinyTeX" / "bin" / "universal-darwin"
+TINYTEX = dsenv.tinytex_bin() or Path("/nonexistent")
 
 
 def pytest_configure(config):
     # In-process renders (e.g. MathTex) need xelatex even if the shell profile wasn't loaded.
-    if TINYTEX.exists() and str(TINYTEX) not in os.environ.get("PATH", ""):
-        os.environ["PATH"] = f"{os.environ.get('PATH', '')}:{TINYTEX}"
+    os.environ.update(dsenv.render_env())
 
 
 def load_tool(name: str):
     """Import tools/<name>.py as a module (tools/ is scripts, not a package)."""
     spec = importlib.util.spec_from_file_location(f"tools_{name}", ROOT / "tools" / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod  # dataclasses and pickling need the module registered
     spec.loader.exec_module(mod)
     return mod
 
@@ -46,11 +48,7 @@ def write_tone(path: Path, seconds: float, sr: int = 24_000) -> Path:
 
 
 def render_env(**extra) -> dict:
-    env = dict(os.environ)
-    if TINYTEX.exists():
-        env["PATH"] = f"{env.get('PATH', '')}:{TINYTEX}"
-    env.update({k: str(v) for k, v in extra.items()})
-    return env
+    return dsenv.render_env(**extra)
 
 
 def run_manim(scene_file: Path, scene: str, out_name: str, media: Path, env: dict,

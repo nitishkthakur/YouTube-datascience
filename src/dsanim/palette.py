@@ -23,7 +23,7 @@ MODEL = ACCENT_3      # the model / the estimate
 ERROR = DANGER        # errors, residuals, what breaks
 TEXT = INK
 
-FADED_OPACITY = 0.2   # "the rest fade to 20% opacity"
+FADED_OPACITY = 0.35  # de-emphasised data: still reads as a cloud being sliced (20% vanished)
 
 # --- Fonts (open licence only: Inter OFL, JetBrains Mono OFL, STIX Two OFL) ---------------
 FONT_TEXT = "Inter"
@@ -38,6 +38,7 @@ FONT_MATH_TEXT = "STIX Two Text"  # \text{...} inside equations
 SIZE_TITLE = 56
 SIZE_BODY = 40
 SIZE_LABEL = 32
+SIZE_TICK = 28        # axis tick numbers: the smallest, quietest text on screen
 SIZE_EQUATION = 44
 SIZE_CAPTION = 36
 

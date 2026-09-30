@@ -17,6 +17,10 @@ deliberately. Root AGENTS.md §3–§4 and §14 apply; this file adds the local 
 | `components/gaussian.py` | `GaussianSlice`: a Normal density on its side along x = x0, with `mean_line()` / `sigma_segment()` | vary its height by density — slices share one `peak_width` (shape, not height) |
 | `components/scatter.py` | `Scatter`: dots that remember their data; `collapsed()`, `focus_band()`, `unfocus()` | |
 | `components/conditional.py` | `band()`, `conditional_slice()`, `mean_point()` — the conditioning mechanics | |
+| `components/ledger.py` | `Ledger`: live `symbol = value unit` readouts bound to callables (`.live()` during sweeps) | |
+| `components/equations.py` | `reveal()` terms at marks, `morph()` old→new keeping surviving terms in place | glyph-morph with TransformMatchingShapes |
+| `captions.py` | caption cards from narration + word timings (burned into vertical renders; SRT) | |
+| `env.py` | `render_env()`: subprocess environment with TeX on PATH | duplicate PATH logic in tools/tests |
 
 ## Rules
 - Components take colours as **roles** (`P.CONCEPT`, …) and sizes from `palette`; they size themselves from a `layout.Region` rather than absolute units, so they work in both orientations.

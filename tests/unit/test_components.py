@@ -101,3 +101,25 @@ def test_band_y_span(axes):
     assert b.get_bottom()[1] == pytest.approx(axes.c2p(0, 2)[1])
     with pytest.raises(ValueError):
         band(axes, 5, 1, y_span=(18, 2))
+
+
+def test_slice_set_params_moves_in_place(axes):
+    g = GaussianSlice(axes, x0=2, mu=10, sigma=2, peak_width=1.0)
+    same = g.set_params(x0=5, mu=12, sigma=1)
+    assert same is g
+    assert g.peak_point() == pytest.approx(axes.c2p(5, 12) + np.array([1.0, 0, 0]))
+    assert g.mean_line().get_start() == pytest.approx(axes.c2p(5, 12))
+    assert g.width_at(13) == pytest.approx(INFLECTION)
+    with pytest.raises(ValueError):
+        g.set_params(sigma=0)
+
+
+def test_conditional_slice_floors_sigma_for_identical_values(axes):
+    from dsanim.components.conditional import SIGMA_FLOOR
+    g = conditional_slice(axes, [1.0, 1.1, 0.9], [5.0, 5.0, 5.0], 1.0, 0.5)
+    assert g.sigma == pytest.approx(SIGMA_FLOOR * 20)
+
+
+def test_slice_appear_is_one_animation(axes):
+    from manim import AnimationGroup
+    assert isinstance(GaussianSlice(axes, 2, 10, 2).appear(), AnimationGroup)

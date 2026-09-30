@@ -38,6 +38,8 @@ FENCE_OPEN_RE = re.compile(r"^```(\w+)?\s*(.*)$")
 MATH_ID_RE = re.compile(r"\bid\s*=\s*([A-Za-z0-9_\-]+)")
 MARK_RE = re.compile(r"\[\[([A-Za-z0-9_\-]+)\]\]")
 COMMENT_RE = re.compile(r"<!--.*?-->", re.S)
+HEADING_RE = re.compile(r"^#{1,6}\s")
+EMPHASIS_RE = re.compile(r"(\*\*|__|\*|_)(?=\S)(.+?)(?<=\S)\1")
 
 
 class ScriptError(ValueError):
@@ -73,8 +75,10 @@ class Beat:
 
     @property
     def text(self) -> str:
-        """Exactly what is spoken (marks removed, whitespace normalised)."""
-        return " ".join(MARK_RE.sub(" ", self.marked_text).split())
+        """Exactly what is spoken: marks removed, markdown emphasis markers dropped,
+        whitespace normalised."""
+        plain = EMPHASIS_RE.sub(r"\2", MARK_RE.sub(" ", self.marked_text))
+        return " ".join(plain.split())
 
     @property
     def words(self) -> list[str]:
@@ -88,7 +92,7 @@ class Beat:
             if m:
                 out.append(Mark(m.group(1), count))
             else:
-                count += len(token.split())
+                count += len(EMPHASIS_RE.sub(r"\2", token).split())
         return out
 
 
@@ -192,7 +196,12 @@ def parse(path: str | Path) -> Script:
             continue
 
         stripped = line.strip()
-        if beat is None or not stripped or stripped.startswith((">", "#", "|", "---")):
+        if HEADING_RE.match(stripped):
+            # Any other heading ends the current beat: its text is not narration.
+            flush_beat()
+            beat = None
+            continue
+        if beat is None or not stripped or stripped.startswith((">", "|", "---")):
             continue
         paragraphs.append(stripped)
 

@@ -1,0 +1,18 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  fast:
+    # Lint + unit/regression tests that need no TeX or fonts (~2 s). The slow layer (real
+    # renders, goldens) runs on Nitish's machine: `uv run pytest`.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg libcairo2-dev libpango1.0-dev pkg-config
+      - run: uv sync
+      - run: uv run python tools/lint_scenes.py < /dev/null
+      - run: uv run pytest -q -m "not slow"

@@ -25,13 +25,19 @@ SHORT_SIDE = 8.0
 SAFE_MARGIN = 0.05        # nothing within 5% of any edge (AGENTS.md §4)
 
 
-def is_vertical() -> bool:
+def requested_vertical() -> bool:
+    """What the environment asks for (set by tools/render.py --vertical)."""
     return os.environ.get("DSANIM_VERTICAL", "0") == "1"
+
+
+def is_vertical() -> bool:
+    """What Manim is actually configured to render right now."""
+    return config.frame_height > config.frame_width
 
 
 def apply_orientation(vertical: bool | None = None) -> None:
     """Configure frame (and pixel) dimensions for the requested orientation."""
-    vertical = is_vertical() if vertical is None else vertical
+    vertical = requested_vertical() if vertical is None else vertical
     pw, ph = config.pixel_width, config.pixel_height
     if vertical:
         config.frame_width, config.frame_height = SHORT_SIDE, LONG_SIDE
@@ -67,12 +73,11 @@ class Region:
 
     def contains(self, mobject, tol: float = 1e-6) -> bool:
         """True if the mobject's bounding box lies inside this region."""
-        return (
-            mobject.get_left()[0] >= self.left - tol
-            and mobject.get_right()[0] <= self.right + tol
-            and mobject.get_bottom()[1] >= self.bottom - tol
-            and mobject.get_top()[1] <= self.top + tol
-        )
+        return self.contains_box(mobject.get_corner([-1, -1, 0]), mobject.get_corner([1, 1, 0]), tol)
+
+    def contains_box(self, lo, hi, tol: float = 1e-6) -> bool:
+        return (lo[0] >= self.left - tol and hi[0] <= self.right + tol
+                and lo[1] >= self.bottom - tol and hi[1] <= self.top + tol)
 
     def fit(self, mobject, pad: float = 0.0, scale_up: bool = False):
         """Scale (down, or also up if scale_up) and centre the mobject inside the region."""

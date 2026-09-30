@@ -46,7 +46,7 @@ def local_normal(x, y, x0: float, half_width: float) -> NormalFit:
     w = band_weights(x, x0, half_width)
     total = w.sum()
     if total <= 0:
-        raise ValueError(f"no points within {half_width} of x0={x0}")
+        raise ValueError(f"no points within {half_width} of x0={x0}: keep sweeps inside the data")
     mean = float((w * y).sum() / total)
     sd = float(np.sqrt((w * (y - mean) ** 2).sum() / total))
     return NormalFit(mean, sd, int((w > 0).sum()))

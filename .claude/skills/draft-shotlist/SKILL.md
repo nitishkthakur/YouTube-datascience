@@ -13,9 +13,13 @@ concept README (shared notation/datasets), `channel/curriculum.md` (what the vie
 2. For each scene and beat, write in `shotlist.md`:
    - scene header: title, estimated length (from check_script durations), layout
      (`plot-left-60 / eq-right-40` default), persistent elements;
-   - per beat: `NARRATION:` quoted **verbatim** from script.md; bullet list of what
-     enters/changes/is emphasised, each with its colour **role** (DATA, DATA_FOCUS, CONCEPT,
-     PARAM, MODEL, ERROR); `sync:` which `[[mark]]` starts which animation; `equations:` ids.
+   - per beat: `NARRATION:` quoted **verbatim** from script.md; `FOCUS:` the one thing the
+     eye must be on; bullet list of what enters/changes/is emphasised, each with its colour
+     **role** (DATA, DATA_FOCUS, CONCEPT, PARAM, MODEL, ERROR); `sync:` which `[[mark]]` starts
+     which animation; `equations:` ids and which terms appear at which mark; `STATE (end):`
+     every persistent object's state; `TRANSITION:` how it becomes the next beat's first frame
+     (nothing jumps). Treat `extend` seconds as choreography: every silent second has a
+     visible change or a hold with a stated reason.
 3. Every animation must explain a state change (no decoration). Respect run-time defaults
    (1.0 s, entrances 0.8 s, sweeps 4–6 s) and ≤12 words of on-screen text.
 4. Where a sync point is needed but the script has no mark, **propose** the mark in a

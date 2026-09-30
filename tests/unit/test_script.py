@@ -83,3 +83,22 @@ def test_draft_is_default_status(tmp_path):
 def test_non_math_code_blocks_are_not_narration(tmp_path):
     s = parse(_write(tmp_path, "## Scene 1 — x\n### Beat 1.1\nspoken\n```python\nx = 1\n```\n"))
     assert s.beat("1.1").text == "spoken" and not s.equations
+
+
+def test_other_headings_end_the_beat_instead_of_leaking(tmp_path):
+    body = ("## Scene 1 — x\n### Beat 1.1\nSpoken line one.\n\n## Open questions\n"
+            "Should the band be wider? Ask Nitish.\n\n#### Notes\nmore notes\n")
+    s = parse(_write(tmp_path, body))
+    assert s.beat("1.1").text == "Spoken line one."
+
+
+def test_lines_starting_with_hash_but_not_headings_are_narration(tmp_path):
+    s = parse(_write(tmp_path, "## Scene 1 — x\n### Beat 1.1\n#1 rule: look at the data.\n"))
+    assert s.beat("1.1").text == "#1 rule: look at the data."
+
+
+def test_markdown_emphasis_is_not_spoken(tmp_path):
+    s = parse(_write(tmp_path, "## Scene 1 — x\n### Beat 1.1\nThis is **very** *important* and _so_ [[m]] on.\n"))
+    b = s.beat("1.1")
+    assert b.text == "This is very important and so on."
+    assert [(m.name, m.word_index) for m in b.marks] == [("m", 6)]

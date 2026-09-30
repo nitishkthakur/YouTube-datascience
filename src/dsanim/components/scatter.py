@@ -34,6 +34,27 @@ class Scatter(VGroup):
             dot.move_to(self.axes.c2p(x_value, b))
         return copy
 
+    def collapsed_histogram(self, x_value: float, bin_width: float, side: int = 1,
+                            gap: float = 1.1) -> "Scatter":
+        """A copy where points stack sideways from x = x_value in bins of y: a dot histogram.
+
+        Points that share a bin sit next to each other (gap × dot diameter apart), so the
+        pile IS the distribution the fitted curve summarises — no smear, nothing hidden.
+        """
+        if bin_width <= 0 or side not in (1, -1):
+            raise ValueError("bin_width must be > 0 and side ±1")
+        copy = self.copy()
+        counts: dict[int, int] = {}
+        order = np.argsort(self.ys, kind="stable")
+        diameter = 2 * self[0].radius if len(self) else 0.0
+        for i in order:
+            b = int(np.floor(self.ys[i] / bin_width))
+            k = counts.get(b, 0)
+            counts[b] = k + 1
+            y_mid = (b + 0.5) * bin_width
+            copy[i].move_to(self.axes.c2p(x_value, y_mid) + np.array([side * (k + 0.5) * gap * diameter, 0, 0]))
+        return copy
+
     def focus_band(self, x0: float, half_width: float, focus_color: str = P.DATA_FOCUS,
                    rest_opacity: float = P.FADED_OPACITY) -> "Scatter":
         """Colour points inside |x - x0| < half_width with focus_color; fade the rest.

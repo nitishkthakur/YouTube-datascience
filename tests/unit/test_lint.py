@@ -1,3 +1,4 @@
+import io
 import json
 import subprocess
 import sys
@@ -7,6 +8,7 @@ import pytest
 from conftest import ROOT, load_tool
 
 lint = load_tool("lint_scenes")
+TOPIC = "topics/030-x/L1/scenes/s03.py"
 
 
 def codes(rel, src):
@@ -28,52 +30,56 @@ def test_hex_colours_only_allowed_in_palette():
     assert codes("src/dsanim/palette.py", 'BG = "#0F1115"')[0] == []
 
 
-def test_inline_latex_banned_in_topics_only():
-    src = 'eq = MathTex(r"y = x")'
-    assert codes("topics/030-x/L1/scenes/s.py", src)[0] == ["E3"]
+@pytest.mark.parametrize("src", [
+    'eq = MathTex(r"y = x")', "eq = MathTex(latex_var)", 'MathTex(f"{a}")', 'Tex("hi")',
+    'T.math(r"\\mu")', 'typography.math(s)',
+])
+def test_inline_equations_banned_in_topics(src):
+    assert codes(TOPIC, src)[0] == ["E3"]
     assert codes("src/dsanim/typography.py", src)[0] == []
 
 
-def test_eq_by_id_is_fine():
-    assert codes("topics/030-x/L1/scenes/s.py", 'eq = self.eq("cond")') == ([], [])
+def test_eq_by_id_and_symbol_are_fine():
+    assert codes(TOPIC, 'eq = self.eq("cond")\ns = T.symbol("mu")') == ([], [])
 
 
-def test_manim_colour_constants_banned_in_topics():
-    assert codes("topics/a/L1/scenes/s.py", "Dot(color=BLUE)")[0] == ["E4"]
-    assert codes("topics/a/L1/scenes/s.py", "Dot(color=BLUE_E)")[0] == ["E4"]
-    assert codes("topics/a/L1/scenes/s.py", "Dot(color=P.CONCEPT)")[0] == []
+@pytest.mark.parametrize("src", ["Dot(color=BLUE)", "Dot(BLUE_E)", "d.set_color(RED)", "c = TEAL"])
+def test_manim_colour_constants_banned_in_topics(src):
+    assert codes(TOPIC, src)[0] == ["E4"]
 
 
-def test_fixed_waits_warn_in_topics():
-    assert codes("topics/a/L1/scenes/s.py", "self.wait(2)")[1] == ["W1"]
-    assert codes("topics/a/L1/scenes/s.py", "b.wait_until('x')")[1] == []
+def test_role_colours_are_fine():
+    assert codes(TOPIC, "Dot(color=P.CONCEPT).set_color(P.MODEL)")[0] == []
+
+
+@pytest.mark.parametrize("src", ["self.wait(2)", "self.wait(HOLD)"])
+def test_fixed_waits_warn_in_topics(src):
+    assert codes(TOPIC, src)[1] == ["W1"]
+
+
+def test_tracker_driven_waits_do_not_warn():
+    assert codes(TOPIC, 'b.wait_until("x")\nself.wait(b.remaining)\nself.wait(frames(0.5))')[1] == []
+
+
+def test_syntax_error_is_reported():
+    assert codes(TOPIC, "def (:")[0] == ["E0"]
 
 
 def test_hook_mode_blocks_with_exit_2(tmp_path):
-    bad = ROOT / "gallery" / "_lint_probe_tmp.py"
+    bad = tmp_path / "gallery" / "probe.py"
+    bad.parent.mkdir()
     bad.write_text('c = "#123456"\n')
-    try:
-        payload = json.dumps({"tool_input": {"file_path": str(bad)}})
-        r = subprocess.run([sys.executable, str(ROOT / "tools/lint_scenes.py"), "--hook"],
-                           input=payload, capture_output=True, text=True)
-        assert r.returncode == 2 and "E2" in r.stderr
-    finally:
-        bad.unlink()
+    payload = io.StringIO(json.dumps({"tool_input": {"file_path": str(bad)}}))
+    assert lint.main(["--hook"], root=tmp_path, stdin=payload) == 2
 
 
-def test_hook_mode_ignores_out_of_scope_files():
-    payload = json.dumps({"tool_input": {"file_path": str(ROOT / "README.md")}})
-    r = subprocess.run([sys.executable, str(ROOT / "tools/lint_scenes.py"), "--hook"],
-                       input=payload, capture_output=True, text=True)
-    assert r.returncode == 0
+def test_hook_mode_ignores_out_of_scope_files(tmp_path):
+    (tmp_path / "README.md").write_text('"#123456"')
+    payload = io.StringIO(json.dumps({"tool_input": {"file_path": str(tmp_path / "README.md")}}))
+    assert lint.main(["--hook"], root=tmp_path, stdin=payload) == 0
 
 
 def test_repo_is_lint_clean():
     r = subprocess.run([sys.executable, str(ROOT / "tools/lint_scenes.py")],
                        stdin=subprocess.DEVNULL, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
-
-
-def test_typography_math_banned_in_topics():
-    assert codes("topics/a/L1/scenes/s.py", 'T.math(r"\\mu")')[0] == ["E3"]
-    assert codes("topics/a/L1/scenes/s.py", 'T.symbol("mu")')[0] == []

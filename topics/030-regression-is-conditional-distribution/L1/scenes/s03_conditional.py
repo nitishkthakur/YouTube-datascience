@@ -28,7 +28,6 @@ RESET_TIME = 1.2             # s, band back to 900 kg before the sweep
 HOLD = 3.0                   # s, hold after the sweep
 PEAK = 1.3                   # scene units — shared peak width of every Gaussian slice
 BAND_Y = (2, 48)             # mpg — band stays clear of the x-axis line and the top tick
-COLLAPSE_TIME = 2.0          # s
 
 
 class Scene03(DSScene):
@@ -62,8 +61,8 @@ class Scene03(DSScene):
 
         # --- Beat 3.1 — ignore x: collapse onto the y-axis, fit the marginal Normal ----------
         with self.beat("3.1", extend=2.0) as b:
-            self.play(Transform(scatter, scatter.collapsed(X_RANGE[0])), run_time=COLLAPSE_TIME)
-            b.wait_until("values")
+            # collapse lasts exactly until "Here is every mpg value..." is spoken
+            self.play(Transform(scatter, scatter.collapsed(X_RANGE[0])), run_time=b.until("values"))
             fit = stats.normal_fit(mpg)
             marginal = GaussianSlice(axes, X_RANGE[0], fit.mean, fit.sd, peak_width=PEAK, side=1)
             mu_line, sigma_seg = marginal.mean_line(), marginal.sigma_segment()

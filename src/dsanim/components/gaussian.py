@@ -14,7 +14,7 @@ scales with 1/sigma if a scene needs density-comparable slices.
 from __future__ import annotations
 
 import numpy as np
-from manim import DashedLine, Line, VGroup, VMobject
+from manim import AnimationGroup, Create, DashedLine, FadeIn, Line, VGroup, VMobject
 
 from dsanim import palette as P
 
@@ -37,19 +37,40 @@ class GaussianSlice(VGroup):
         if side not in (1, -1):
             raise ValueError("side must be +1 or -1")
         self.axes, self.x0, self.mu, self.sigma = axes, x0, mu, sigma
-        self.peak_width, self.side = peak_width, side
+        self.peak_width, self.side, self.span, self.samples = peak_width, side, span, samples
+        self.fill = VMobject(stroke_width=0, fill_color=color, fill_opacity=fill_opacity)
+        self.curve = VMobject(stroke_color=color, stroke_width=stroke_width)
+        self.add(self.fill, self.curve)
+        self._rebuild()
 
-        y_min, y_max = axes.y_range[0], axes.y_range[1]
-        lo, hi = max(mu - span * sigma, y_min), min(mu + span * sigma, y_max)
-        ys = np.linspace(lo, hi, samples)
+    def _rebuild(self) -> None:
+        y_min, y_max = self.axes.y_range[0], self.axes.y_range[1]
+        lo = max(self.mu - self.span * self.sigma, y_min)
+        hi = min(self.mu + self.span * self.sigma, y_max)
+        ys = np.linspace(lo, hi, self.samples)
         self.curve_points = np.array([self._point(y) for y in ys])
         base_lo, base_hi = self.base_point(lo), self.base_point(hi)
-
-        self.fill = VMobject(stroke_width=0, fill_color=color, fill_opacity=fill_opacity)
         self.fill.set_points_as_corners([base_lo, *self.curve_points, base_hi, base_lo])
-        self.curve = VMobject(stroke_color=color, stroke_width=stroke_width)
         self.curve.set_points_smoothly(self.curve_points)
-        self.add(self.fill, self.curve)
+
+    def set_params(self, x0: float | None = None, mu: float | None = None,
+                   sigma: float | None = None) -> "GaussianSlice":
+        """Move/reshape in place (cheaper than rebuilding; keeps mean_line() etc. valid).
+        Use from an updater during a sweep."""
+        if x0 is not None:
+            self.x0 = x0
+        if mu is not None:
+            self.mu = mu
+        if sigma is not None:
+            if sigma <= 0:
+                raise ValueError("sigma must be > 0")
+            self.sigma = sigma
+        self._rebuild()
+        return self
+
+    def appear(self, run_time: float = P.RUN_TIME) -> AnimationGroup:
+        """Draw the curve and fade the fill, as one animation of the whole slice."""
+        return AnimationGroup(Create(self.curve), FadeIn(self.fill), run_time=run_time)
 
     # --- geometry -----------------------------------------------------------------------
     def base_point(self, y: float) -> np.ndarray:

@@ -87,7 +87,12 @@ The audience is people who already write Python but were taught the shallow vers
     ├── lint_scenes.py         # mechanical rule checks (also the Claude Code hook)
     ├── tts_placeholder.py     # Kokoro placeholder narration + word timings
     ├── new_topic.py           # scaffold a concept / tier from topics/_template
-    └── fetch_data.py          # (re)download real datasets into data/
+    ├── fetch_data.py          # (re)download real datasets into data/
+    ├── render_all.py          # every scene of a tier at one quality → renders/manifest_<q>.json
+    ├── assemble.py            # scenes → one video + chapters + SRT + publish/manifest.json
+    ├── make_shorts.py         # vertical chunks from shorts/chunks.yaml
+    ├── status.py              # readiness: what NITISH / CODE / AGENT still owe
+    └── pipeline.py            # deterministic one-shot: status → render l/m/h → assemble → shorts
 ```
 
 Rules:

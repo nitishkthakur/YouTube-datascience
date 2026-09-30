@@ -17,7 +17,8 @@ from conftest import ROOT, render_env, run_manim
 
 GOLDEN = Path(__file__).parent / "golden"
 pytestmark = [pytest.mark.regression, pytest.mark.slow]
-TOLERANCE = 2.0  # mean absolute difference per channel, 0-255
+CHANGED_PIXEL = 24      # a pixel counts as changed if any channel moves more than this (0-255)
+MAX_CHANGED = 0.002     # fraction of the frame allowed to change (0.2% ≈ a 40x20 px block at 480p)
 
 SCENES = {
     "style_sheet": ("gallery/style_sheet.py", "StyleSheet"),
@@ -46,4 +47,5 @@ def test_gallery_last_frame(tmp_path, name, vertical):
             pytest.skip(f"created golden {golden.name}; inspect it, then re-run")
     want = np.asarray(Image.open(golden).convert("RGB"), dtype=float)
     assert got.shape == want.shape
-    assert np.abs(got - want).mean() < TOLERANCE
+    changed = (np.abs(got - want).max(axis=-1) > CHANGED_PIXEL).mean()
+    assert changed < MAX_CHANGED, f"{changed:.2%} of pixels differ from {golden.name}"

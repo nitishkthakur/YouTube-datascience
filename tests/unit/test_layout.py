@@ -25,9 +25,11 @@ def test_orientation_sets_frame_and_pixels(vertical, restore_config):
 
 def test_orientation_from_env(monkeypatch, restore_config):
     monkeypatch.setenv("DSANIM_VERTICAL", "1")
-    assert layout.is_vertical()
+    assert layout.requested_vertical()
     layout.apply_orientation()
-    assert config.frame_height > config.frame_width
+    assert layout.is_vertical() and config.frame_height > config.frame_width
+    layout.apply_orientation(False)
+    assert not layout.is_vertical()  # what Manim is configured to, not the env var
 
 
 @pytest.mark.parametrize("vertical", [False, True])

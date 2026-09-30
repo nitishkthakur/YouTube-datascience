@@ -33,10 +33,18 @@ def conditional_fit(xs, ys, x0: float, half_width: float) -> stats.NormalFit:
     return stats.local_normal(xs, ys, x0, half_width)
 
 
+SIGMA_FLOOR = 0.02  # fraction of the y-range: a band of identical y values still draws a slice
+
+
 def conditional_slice(axes, xs, ys, x0: float, half_width: float, **slice_kw) -> GaussianSlice:
-    """GaussianSlice at x0 fitted to the points inside the band."""
+    """GaussianSlice at x0 fitted to the points inside the band.
+
+    sigma is floored at SIGMA_FLOOR of the axes' y-range so a band holding a few identical
+    values (sd = 0) still renders instead of crashing an updater mid-sweep.
+    """
     fit = conditional_fit(xs, ys, x0, half_width)
-    return GaussianSlice(axes, x0, fit.mean, fit.sd, **slice_kw)
+    floor = SIGMA_FLOOR * (axes.y_range[1] - axes.y_range[0])
+    return GaussianSlice(axes, x0, fit.mean, max(fit.sd, floor), **slice_kw)
 
 
 def mean_point(axes, xs, ys, x0: float, half_width: float):

@@ -1,7 +1,14 @@
 import pytest
 from manim import config
 
-from dsanim import palette as P, typography as T
+from dsanim import layout, palette as P, typography as T
+
+
+@pytest.fixture
+def restore_config():
+    saved = (config.frame_width, config.frame_height, config.pixel_width, config.pixel_height)
+    yield
+    config.frame_width, config.frame_height, config.pixel_width, config.pixel_height = saved
 
 
 def test_tex_template_uses_xelatex_and_stix():
@@ -17,10 +24,10 @@ def test_text_uses_channel_font_and_colour():
     assert all(g.get_fill_color().to_hex().upper() == P.TEXT.upper() for g in t)
 
 
-def test_vertical_scales_text(monkeypatch):
-    monkeypatch.setenv("DSANIM_VERTICAL", "0")
+def test_vertical_scales_text(restore_config):
+    layout.apply_orientation(False)
     assert T.scaled(P.SIZE_LABEL) == P.SIZE_LABEL
-    monkeypatch.setenv("DSANIM_VERTICAL", "1")
+    layout.apply_orientation(True)
     assert T.scaled(P.SIZE_LABEL) == pytest.approx(P.SIZE_LABEL * P.VERTICAL_TEXT_SCALE)
 
 

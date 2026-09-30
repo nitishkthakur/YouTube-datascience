@@ -1,6 +1,7 @@
 """Frames every N seconds -> one PNG grid, for agents (who cannot watch video) to inspect.
 
     uv run python tools/contact_sheet.py <video.mp4> [--every 2] [--cols 4] [--no-safe]
+                                        [--start 8 --end 14]   # dense strip of one beat
 
 Writes <video>.sheet.png next to the video. Each tile is labelled with its timestamp and
 carries a thin outline of the 5% safe-area margin, so anything crossing it is obvious.
@@ -42,13 +43,19 @@ def main() -> Path:
     ap = argparse.ArgumentParser()
     ap.add_argument("video", type=Path)
     ap.add_argument("--every", type=float, default=2.0)
+    ap.add_argument("--start", type=float, default=0.0, help="first sampled second")
+    ap.add_argument("--end", type=float, default=None, help="last sampled second (default: video end)")
     ap.add_argument("--cols", type=int, default=4)
     ap.add_argument("--no-safe", action="store_true")
     args = ap.parse_args()
 
     total = duration(args.video)
-    times: list[float | None] = [t for t in _frange(0.0, total, args.every) if total - t > 0.25]
-    times.append(None)  # always include the final frame (the end state)
+    end = total if args.end is None else min(args.end, total)
+    times: list[float | None] = [t for t in _frange(args.start, end, args.every) if end - t > 0.25]
+    if args.end is None:
+        times.append(None)  # always include the final frame (the end state)
+    else:
+        times.append(end)
 
     try:
         font = ImageFont.truetype("Menlo.ttc", 18)
