@@ -59,3 +59,40 @@ def test_wait_until_mark_uses_word_timings(tmp_path):
     r = run_manim(SCENE, "WaitsForMark", "mark", tmp_path / "media", render_env(DSANIM_AUDIO_DIR=audio))
     assert r.returncode == 0, r.stderr[-2000:]
     assert video_duration(_find(tmp_path / "media", "mark")) == pytest.approx(4.0 + P.TAIL_SILENCE, abs=0.1)
+
+
+def test_extend_allows_silent_visual_time(tmp_path):
+    # 1.0 s speech, 2.0 s animation, extend 1.5 -> beat ends at 2.0 + tail
+    audio = tmp_path / "audio"
+    write_tone(audio / "fixture-topic/L1/s01_b01.wav", 1.0)
+    r = run_manim(SCENE, "ExtendsBeat", "ext", tmp_path / "media", render_env(DSANIM_AUDIO_DIR=audio))
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert video_duration(_find(tmp_path / "media", "ext")) == pytest.approx(
+        2.0 + P.TAIL_SILENCE, abs=0.1)
+
+
+def test_extend_budget_is_enforced(tmp_path):
+    # 1.0 s speech + 0.5 s extend < 2.0 s animation -> overrun
+    audio = tmp_path / "audio"
+    write_tone(audio / "fixture-topic/L1/s01_b01.wav", 1.0)
+    r = run_manim(SCENE, "ExtendTooSmall", "ext2", tmp_path / "media", render_env(DSANIM_AUDIO_DIR=audio))
+    assert r.returncode != 0 and "NarrationOverrun" in r.stdout + r.stderr
+
+
+def test_safe_area_violation_warns_while_iterating(tmp_path):
+    r = run_manim(SCENE, "LeavesSafeArea", "unsafe", tmp_path / "media",
+                  render_env(DSANIM_AUDIO_DIR=tmp_path / "none"))
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "outside safe area" in r.stdout + r.stderr
+
+
+def test_safe_area_violation_fails_final_render(tmp_path):
+    r = run_manim(SCENE, "LeavesSafeArea", "unsafe_final", tmp_path / "media",
+                  render_env(DSANIM_AUDIO_DIR=tmp_path / "none", DSANIM_FINAL=1))
+    assert r.returncode != 0 and "SafeAreaViolation" in r.stdout + r.stderr
+
+
+def test_invisible_and_inside_mobjects_pass_safe_area(tmp_path):
+    r = run_manim(SCENE, "StaysInSafeArea", "safe", tmp_path / "media",
+                  render_env(DSANIM_AUDIO_DIR=tmp_path / "none"))
+    assert r.returncode == 0 and "outside safe area" not in r.stdout + r.stderr

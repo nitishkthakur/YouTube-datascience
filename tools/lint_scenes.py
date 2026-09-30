@@ -10,7 +10,8 @@ Rules
     E1  ManimGL-isms: manimlib, ShowCreation, TextMobject, TexMobject, CONFIG dicts
     E2  hex colour literals outside src/dsanim/palette.py
   topic scenes (topics/**.py):
-    E3  MathTex/Tex built from a string literal — use self.eq("<id>") from script.md
+    E3  MathTex/Tex built from a string literal, or typography.math() — use self.eq("<id>")
+        from script.md (single diagram symbols: typography.symbol("mu"))
     E4  Manim built-in colour constants (BLUE, RED, ...) — use dsanim.palette as P
     W1  self.wait(<number>) — beat timing should come from narration (self.beat)
 """
@@ -27,7 +28,7 @@ SCOPES = ("src", "gallery", "topics")
 
 E1 = re.compile(r"\b(manimlib|ShowCreation|TextMobject|TexMobject)\b|^\s*CONFIG\s*=\s*\{", re.M)
 E2 = re.compile(r"""["']#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?["']""")
-E3 = re.compile(r"\b(MathTex|Tex|SingleStringMathTex)\(\s*r?[\"']")
+E3 = re.compile(r"\b(MathTex|Tex|SingleStringMathTex)\(\s*r?[\"']|\b(?:T|typography)\.math\(")
 MANIM_COLOURS = (
     "WHITE|BLACK|GRAY|GREY|LIGHT_GRAY|DARK_GRAY|RED|GREEN|BLUE|YELLOW|GOLD|TEAL|MAROON|PURPLE|"
     "PINK|ORANGE|LIGHT_BROWN|DARK_BROWN|GRAY_BROWN|PURE_RED|PURE_GREEN|PURE_BLUE"

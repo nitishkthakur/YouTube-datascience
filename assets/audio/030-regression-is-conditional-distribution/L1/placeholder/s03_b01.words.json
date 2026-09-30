@@ -1,0 +1,67 @@
+[
+ {
+  "word": "Ignore",
+  "start": 0.3,
+  "end": 0.675
+ },
+ {
+  "word": "weight",
+  "start": 0.675,
+  "end": 0.9
+ },
+ {
+  "word": "for",
+  "start": 0.9,
+  "end": 1.0125
+ },
+ {
+  "word": "a",
+  "start": 1.0125,
+  "end": 1.075
+ },
+ {
+  "word": "second",
+  "start": 1.075,
+  "end": 1.7
+ },
+ {
+  "word": "Here",
+  "start": 1.8375,
+  "end": 2.075
+ },
+ {
+  "word": "is",
+  "start": 2.075,
+  "end": 2.2375
+ },
+ {
+  "word": "every",
+  "start": 2.2375,
+  "end": 2.6125
+ },
+ {
+  "word": "mpg",
+  "start": 2.6125,
+  "end": 3.225
+ },
+ {
+  "word": "value",
+  "start": 3.225,
+  "end": 3.625
+ },
+ {
+  "word": "we",
+  "start": 3.625,
+  "end": 3.775
+ },
+ {
+  "word": "ever",
+  "start": 3.775,
+  "end": 4.0625
+ },
+ {
+  "word": "saw",
+  "start": 4.0625,
+  "end": 4.6
+ }
+]

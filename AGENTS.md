@@ -57,7 +57,8 @@ The audience is people who already write Python but were taught the shallow vers
 │   ├── narration.py           # finds a beat's audio, duration, mark times
 │   ├── scene.py               # DSScene base class: self.beat(), self.eq(), self.layout
 │   ├── data.py                # every dataset (real loaders + seeded synthetic generators)
-│   └── components/            # (grows with the pilot) gaussian, scatter, conditional, equations, mascot …
+│   ├── stats.py               # the estimators drawn on screen (Normal MLE, local band fit)
+│   └── components/            # gaussian (GaussianSlice), scatter (Scatter), conditional (band, slice, trace) …
 ├── gallery/                   # one review scene per component + the style sheet
 ├── data/                      # curated real datasets (committed) + PROVENANCE.md; cache/ is ignored
 ├── assets/
@@ -203,7 +204,7 @@ The agent may propose beats and propose `[[marks]]`; it may not change narration
 
 ### 5.3 `scenes/*.py` — the code (written by the agent, reviewed by Nitish via rendered frames)
 
-One `DSScene` subclass per scene file, importing only from `manim` and `dsanim`. Every beat is a clearly commented `with self.beat("N.M") as b:` block. Timings come from the audio (§7) — `b.until("mark")`, `b.wait_until("mark")`, `b.remaining` — not from guessed `wait()` values (lint warning W1).
+One `DSScene` subclass per scene file, importing only from `manim` and `dsanim`. Every beat is a clearly commented `with self.beat("N.M", extend=…) as b:` block. Timings come from the audio (§7) — `b.until("mark")`, `b.wait_until("mark")`, `b.remaining` — not from guessed `wait()` values (lint warning W1). Single symbols that label a diagram (μ, σ) come from `typography.symbol("mu")`; anything longer is an equation and comes from `self.eq()`.
 
 ---
 
@@ -243,6 +244,8 @@ Manim has no timeline. Timing is derived from audio, never guessed.
 **Rules:**
 - Audio is **not in git**. Default root is `assets/audio/` (ignored); set `DSANIM_AUDIO_DIR` to keep it on a backed-up drive. Beat 3.2 → `s03_b02.wav`.
 - Inside `with self.beat("3.2") as b:` animations must finish within the narration; on exit the scene holds the final state for the rest of the narration plus `TAIL_SILENCE` (0.5 s). So every beat ends on ≥0.5 s of silence.
+- A beat that needs **silent visual time** beyond its speech (a sweep, a hold) declares it: `self.beat("3.3", extend=9.0)`. The budget is then speech + extend; the shot list states each beat's `extend` and Nitish approves it. Default 0 — never pad a beat silently to hide a slow animation.
+- At the end of every beat the scene checks that everything visible is inside the safe area: a warning while iterating, an error (`SafeAreaViolation`) in `-q h`/`-q k` renders.
 - Mark times use `<key>.words.json` word timings when present (Kokoro provides them; recorded audio will get them from a forced-alignment tool, `tools/align.py`, still to be built) and otherwise interpolate by word position.
 - Placeholder audio is **never shipped**: `-q h`/`-q k` renders abort if any beat uses it.
 
@@ -313,7 +316,7 @@ Every piece of code ships with tests in the same change. Nitish's rule: **tests 
 | Layer | Folder | Marker | What |
 |---|---|---|---|
 | Unit | `tests/unit/` | — | pure logic: palette, layout, parser, narration, data, each tool |
-| Regression | `tests/regression/` | `regression` | pins a major feature against a golden/known result: parsed-script snapshots, beat timing vs audio, style-sheet golden frames |
+| Regression | `tests/regression/` | `regression` | pins a major feature against a golden/known result: parsed-script snapshots, beat timing vs audio, safe-area check, golden last frames of every gallery scene in both orientations |
 | Smoke | `tests/smoke/` | `smoke` | does the toolchain work at all: imports, fonts, TeX, tool CLIs, a real `-ql` render in both orientations, TTS |
 
 - Anything that renders or runs TTS is also marked `slow`. Fast loop: `uv run pytest -m "not slow"` (~1 s). Before reporting anything done: `uv run pytest` (~20 s; `uv run --extra tts pytest` to include the TTS smoke test).

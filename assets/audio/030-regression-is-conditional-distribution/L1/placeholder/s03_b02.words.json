@@ -1,0 +1,52 @@
+[
+ {
+  "word": "Now",
+  "start": 0.3,
+  "end": 0.5
+ },
+ {
+  "word": "suppose",
+  "start": 0.5,
+  "end": 1.1
+ },
+ {
+  "word": "I",
+  "start": 1.1,
+  "end": 1.225
+ },
+ {
+  "word": "tell",
+  "start": 1.225,
+  "end": 1.4
+ },
+ {
+  "word": "you",
+  "start": 1.4,
+  "end": 1.4875
+ },
+ {
+  "word": "the",
+  "start": 1.4875,
+  "end": 1.575
+ },
+ {
+  "word": "car",
+  "start": 1.575,
+  "end": 1.85
+ },
+ {
+  "word": "weighs",
+  "start": 1.85,
+  "end": 2.1875
+ },
+ {
+  "word": "1500",
+  "start": 2.1875,
+  "end": 2.925
+ },
+ {
+  "word": "kg",
+  "start": 2.925,
+  "end": 3.7
+ }
+]

@@ -29,3 +29,9 @@ def test_font_size_equals_px_x_height_at_1080p():
     x = T.text("x", size=40)
     px_per_unit = 1080 / config.frame_height
     assert x.height * px_per_unit == pytest.approx(40, rel=0.1)
+
+
+def test_symbol_whitelist():
+    assert T.symbol("mu").tex_string.strip() == r"\mu"
+    with pytest.raises(KeyError):
+        T.symbol(r"\int_0^1")

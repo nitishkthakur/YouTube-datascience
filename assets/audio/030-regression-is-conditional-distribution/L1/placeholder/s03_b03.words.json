@@ -1,0 +1,42 @@
+[
+ {
+  "word": "Slide",
+  "start": 0.3,
+  "end": 0.5875
+ },
+ {
+  "word": "the",
+  "start": 0.5875,
+  "end": 0.675
+ },
+ {
+  "word": "weight",
+  "start": 0.675,
+  "end": 1.1375
+ },
+ {
+  "word": "and",
+  "start": 1.1375,
+  "end": 1.2625
+ },
+ {
+  "word": "the",
+  "start": 1.2625,
+  "end": 1.3625
+ },
+ {
+  "word": "whole",
+  "start": 1.3625,
+  "end": 1.625
+ },
+ {
+  "word": "distribution",
+  "start": 1.625,
+  "end": 2.25
+ },
+ {
+  "word": "moves",
+  "start": 2.25,
+  "end": 2.85
+ }
+]

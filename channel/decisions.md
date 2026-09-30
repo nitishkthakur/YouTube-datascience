@@ -3,6 +3,21 @@
 Short records of project-level decisions and why, newest first. Topic-specific decisions go
 in that topic's NOTES.md. When a decision changes AGENTS.md, note it here too.
 
+## 2026-09-30 (later) — Pilot Scene 3
+- **Silent visual time**: `self.beat(id, extend=s)` lets a beat's animations run `s` seconds past
+  its speech (sweeps, holds). Budgeted per beat in the shot list; default 0. Chosen over
+  script pauses (Nitish would have to time them while recording) and over compressing the
+  scene to the speech. AGENTS.md §7.
+- **Safe-area check at the end of every beat** (`DSScene._check_safe_area`): warning while
+  iterating, `SafeAreaViolation` in final renders. Non-drawn mobjects (ValueTracker) ignored.
+- **Local band estimate** (`dsanim.stats.local_normal`, Epanechnikov, half-width 75 kg) for
+  μ(x), σ(x) in the pilot, all 398 cars on screen. See the tier NOTES.md for the numbers.
+- **`typography.symbol()`**: a whitelist of single symbols (μ, σ, β₀ …) for labelling diagrams;
+  anything longer is an equation and must come from script.md via `self.eq()`. Lint E3 now
+  also flags `T.math()` in topic scenes.
+- **Gallery goldens** cover every gallery scene in both orientations
+  (`tests/regression/test_gallery_frames.py`), not just the style sheet.
+
 ## 2026-09-30 — Project initialisation
 - **Package** `dsanim` in `src/dsanim/` (was `lib/`): installable, unambiguous import name;
   `lib/` collided with the Python .gitignore template.

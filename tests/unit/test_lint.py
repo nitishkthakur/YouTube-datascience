@@ -72,3 +72,8 @@ def test_repo_is_lint_clean():
     r = subprocess.run([sys.executable, str(ROOT / "tools/lint_scenes.py")],
                        stdin=subprocess.DEVNULL, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
+
+
+def test_typography_math_banned_in_topics():
+    assert codes("topics/a/L1/scenes/s.py", 'T.math(r"\\mu")')[0] == ["E3"]
+    assert codes("topics/a/L1/scenes/s.py", 'T.symbol("mu")')[0] == []

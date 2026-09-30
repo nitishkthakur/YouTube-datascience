@@ -13,11 +13,15 @@ deliberately. Root AGENTS.md §3–§4 and §14 apply; this file adds the local 
 | `narration.py` | locating beat audio, durations, `[[mark]]` times | read audio paths anywhere else |
 | `scene.py` | `DSScene`: `self.beat()`, `self.eq()`, `self.layout`, `self.vertical`; global Manim config on import | add per-topic logic |
 | `data.py` | every dataset shown on screen (real loaders + seeded synthetic generators with docstrings) | generate data inside a scene |
-| `components/` | reusable animated building blocks (Gaussian, scatter band, conditional sweep, equation stack, mascot) | put topic-specific one-offs here |
+| `stats.py` | every estimator whose result is drawn (Normal MLE, Epanechnikov local Normal fit) | compute statistics ad hoc in a scene |
+| `components/gaussian.py` | `GaussianSlice`: a Normal density on its side along x = x0, with `mean_line()` / `sigma_segment()` | vary its height by density — slices share one `peak_width` (shape, not height) |
+| `components/scatter.py` | `Scatter`: dots that remember their data; `collapsed()`, `focus_band()`, `unfocus()` | |
+| `components/conditional.py` | `band()`, `conditional_slice()`, `mean_point()` — the conditioning mechanics | |
 
 ## Rules
 - Components take colours as **roles** (`P.CONCEPT`, …) and sizes from `palette`; they size themselves from a `layout.Region` rather than absolute units, so they work in both orientations.
 - Components never call `self.wait`/`self.play` with hard-coded durations tied to narration; they return mobjects/animations and let the scene time them with `b.until(...)`.
 - Every new or changed public function gets unit tests. A new component also gets a `gallery/` scene; a major one also gets a golden-frame regression test (root AGENTS.md §14).
-- Changing `palette.py`/`layout.py`/`typography.py` changes the style-sheet goldens: re-render `gallery/style_sheet.py`, inspect it, then regenerate goldens deliberately.
+- Changing `palette.py`/`layout.py`/`typography.py` or a component changes the gallery goldens: re-render the affected `gallery/` scene(s), inspect them, then regenerate goldens deliberately (`tests/regression/test_gallery_frames.py`).
+- `Create(slice.curve)` / `FadeIn(slice.fill)` add the *submobjects* to the scene; to take a `GaussianSlice` off screen remove `.curve` and `.fill` as well as the group (or animate the group as a whole).
 - ManimCE 0.21 API only. If unsure, check the installed version's source/docs; never guess from ManimGL examples.
