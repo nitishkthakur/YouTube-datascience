@@ -1,0 +1,82 @@
+[
+ {
+  "word": "Data",
+  "start": 0.3,
+  "end": 0.6375
+ },
+ {
+  "word": "sits",
+  "start": 0.6375,
+  "end": 0.925
+ },
+ {
+  "word": "in",
+  "start": 0.925,
+  "end": 1.075
+ },
+ {
+  "word": "grey",
+  "start": 1.075,
+  "end": 1.625
+ },
+ {
+  "word": "the",
+  "start": 1.75,
+  "end": 1.875
+ },
+ {
+  "word": "model's",
+  "start": 1.875,
+  "end": 2.3125
+ },
+ {
+  "word": "estimate",
+  "start": 2.3125,
+  "end": 2.775
+ },
+ {
+  "word": "in",
+  "start": 2.775,
+  "end": 2.925
+ },
+ {
+  "word": "violet",
+  "start": 2.925,
+  "end": 3.65
+ },
+ {
+  "word": "and",
+  "start": 3.75,
+  "end": 3.8625
+ },
+ {
+  "word": "the",
+  "start": 3.8625,
+  "end": 3.95
+ },
+ {
+  "word": "equation",
+  "start": 3.95,
+  "end": 4.4875
+ },
+ {
+  "word": "panel",
+  "start": 4.4875,
+  "end": 4.8875
+ },
+ {
+  "word": "on",
+  "start": 4.8875,
+  "end": 4.9875
+ },
+ {
+  "word": "the",
+  "start": 4.9875,
+  "end": 5.075
+ },
+ {
+  "word": "right",
+  "start": 5.075,
+  "end": 5.675
+ }
+]

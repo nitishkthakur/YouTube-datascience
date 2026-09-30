@@ -1,0 +1,23 @@
+# src/dsanim — the visual language
+
+Everything every video shares. A change here changes every past and future video, so work
+deliberately. Root AGENTS.md §3–§4 and §14 apply; this file adds the local rules.
+
+## Module map
+| Module | Owns | Don't |
+|---|---|---|
+| `palette.py` | every colour, semantic role, font name, type size, motion default | put a colour or font anywhere else |
+| `layout.py` | orientation (`DSANIM_VERTICAL`), safe area, `plot/equation/caption` regions | position things with magic coordinates in scenes |
+| `typography.py` | `text()`, `label()`, `code()`, `math()`, XeLaTeX STIX template, vertical text scale | construct `Text`/`MathTex` with styling elsewhere |
+| `script.py` | parsing `script.md` (format: root AGENTS.md §5.1) | loosen the format silently — it is a contract with Nitish |
+| `narration.py` | locating beat audio, durations, `[[mark]]` times | read audio paths anywhere else |
+| `scene.py` | `DSScene`: `self.beat()`, `self.eq()`, `self.layout`, `self.vertical`; global Manim config on import | add per-topic logic |
+| `data.py` | every dataset shown on screen (real loaders + seeded synthetic generators with docstrings) | generate data inside a scene |
+| `components/` | reusable animated building blocks (Gaussian, scatter band, conditional sweep, equation stack, mascot) | put topic-specific one-offs here |
+
+## Rules
+- Components take colours as **roles** (`P.CONCEPT`, …) and sizes from `palette`; they size themselves from a `layout.Region` rather than absolute units, so they work in both orientations.
+- Components never call `self.wait`/`self.play` with hard-coded durations tied to narration; they return mobjects/animations and let the scene time them with `b.until(...)`.
+- Every new or changed public function gets unit tests. A new component also gets a `gallery/` scene; a major one also gets a golden-frame regression test (root AGENTS.md §14).
+- Changing `palette.py`/`layout.py`/`typography.py` changes the style-sheet goldens: re-render `gallery/style_sheet.py`, inspect it, then regenerate goldens deliberately.
+- ManimCE 0.21 API only. If unsure, check the installed version's source/docs; never guess from ManimGL examples.

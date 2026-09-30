@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "topic": "fixture-topic",
+    "tier": "L1",
+    "status": "frozen",
+    "wpm": 120
+  },
+  "scenes": {
+    "1": {
+      "title": "Timing",
+      "beats": [
+        "1.1",
+        "1.2"
+      ]
+    },
+    "2": {
+      "title": "Second",
+      "beats": [
+        "2.1"
+      ]
+    }
+  },
+  "beats": {
+    "1.1": {
+      "key": "s01_b01",
+      "text": "One two three four five six.",
+      "marks": [
+        [
+          "go",
+          3
+        ]
+      ],
+      "equations": [
+        "fixture-eq"
+      ]
+    },
+    "1.2": {
+      "key": "s01_b02",
+      "text": "Seven eight.",
+      "marks": [],
+      "equations": []
+    },
+    "2.1": {
+      "key": "s02_b01",
+      "text": "Nine ten eleven.",
+      "marks": [
+        [
+          "a",
+          1
+        ],
+        [
+          "b",
+          2
+        ]
+      ],
+      "equations": []
+    }
+  },
+  "equations": {
+    "fixture-eq": {
+      "beat": "1.1",
+      "latex": "Y \\mid X = x \\sim \\mathcal{N}({{\\mu(x)}}, \\sigma^2)"
+    }
+  }
+}

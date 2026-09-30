@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "topic": "gallery",
+    "tier": "style",
+    "status": "frozen",
+    "title_candidates": [
+      "Style sheet (internal)"
+    ],
+    "hook": "Internal review scene: palette, type, equations, layout regions. Not channel content.",
+    "wpm": 150,
+    "tts_voice": "af_heart",
+    "tts_speed": 1.0
+  },
+  "scenes": {
+    "1": {
+      "title": "Style sheet",
+      "beats": [
+        "1.1",
+        "1.2"
+      ]
+    }
+  },
+  "beats": {
+    "1.1": {
+      "key": "s01_b01",
+      "text": "These are the colour roles. Every video uses the same meaning for each colour.",
+      "marks": [
+        [
+          "swatches",
+          5
+        ]
+      ],
+      "equations": []
+    },
+    "1.2": {
+      "key": "s01_b02",
+      "text": "Data sits in grey, the model's estimate in violet, and the equation panel on the right.",
+      "marks": [
+        [
+          "model",
+          4
+        ]
+      ],
+      "equations": [
+        "style-model"
+      ]
+    }
+  },
+  "equations": {
+    "style-model": {
+      "beat": "1.2",
+      "latex": "\\hat{y} = {{\\beta_0}} + {{\\beta_1}} x"
+    }
+  }
+}

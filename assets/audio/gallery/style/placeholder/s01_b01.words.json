@@ -1,0 +1,72 @@
+[
+ {
+  "word": "These",
+  "start": 0.3,
+  "end": 0.7
+ },
+ {
+  "word": "are",
+  "start": 0.7,
+  "end": 0.8125
+ },
+ {
+  "word": "the",
+  "start": 0.8125,
+  "end": 0.9
+ },
+ {
+  "word": "colour",
+  "start": 0.9,
+  "end": 1.25
+ },
+ {
+  "word": "roles",
+  "start": 1.25,
+  "end": 1.95
+ },
+ {
+  "word": "Every",
+  "start": 2.0875,
+  "end": 2.4
+ },
+ {
+  "word": "video",
+  "start": 2.4,
+  "end": 2.8
+ },
+ {
+  "word": "uses",
+  "start": 2.8,
+  "end": 3.1125
+ },
+ {
+  "word": "the",
+  "start": 3.1125,
+  "end": 3.2375
+ },
+ {
+  "word": "same",
+  "start": 3.2375,
+  "end": 3.55
+ },
+ {
+  "word": "meaning",
+  "start": 3.55,
+  "end": 3.9
+ },
+ {
+  "word": "for",
+  "start": 3.9,
+  "end": 4.05
+ },
+ {
+  "word": "each",
+  "start": 4.05,
+  "end": 4.275
+ },
+ {
+  "word": "colour",
+  "start": 4.275,
+  "end": 4.9
+ }
+]
