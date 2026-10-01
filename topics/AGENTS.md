@@ -5,8 +5,10 @@ Create with `uv run python tools/new_topic.py <NNN-slug> <L1|L2|L3>`; add the co
 `channel/curriculum.md`. Never edit `_template/` for one topic's needs.
 
 ## Order of work inside a tier (root AGENTS.md §5–§8)
-1. `script.md` — Nitish's. Agents may only draft it when explicitly asked (e.g. from his
-   voice memo), and every edit needs his approval (hook). Never change narration or math.
+0. `outline.md` — Nitish's points, in his order. Ask for it; never invent the material.
+1. `script.proposed.md` — the agent's expansion of the outline in full script format, every
+   addition marked (skill `draft-script`). `script.md` is Nitish's: he promotes the proposal
+   himself; every agent edit to it needs his approval (hook). Never change narration or math.
 2. `shotlist.md` — agent drafts from the script (skill `draft-shotlist`), Nitish approves.
 3. `scenes/sNN_<slug>.py` — one `DSScene` subclass per file, one scene at a time (skill
    `build-scene`). Beats are `with self.beat("N.M") as b:` blocks; equations via

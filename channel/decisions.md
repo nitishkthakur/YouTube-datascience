@@ -3,6 +3,14 @@
 Short records of project-level decisions and why, newest first. Topic-specific decisions go
 in that topic's NOTES.md. When a decision changes AGENTS.md, note it here too.
 
+## 2026-10-01 — The standard procedure (Nitish)
+- Outline (Nitish) → proposed script with marked additions (agent, `script.proposed.md`) →
+  script.md (Nitish edits/promotes) → shot list approved → voiceover recorded and registered
+  (Nitish) → animation against his voice (agent) → review → produce. Placeholder voice is for
+  timing drafts only. He owns substance and sequence; the agent is the second pair of eyes
+  for gaps and owns the animation. AGENTS.md §5.1/§7, skill `draft-script`,
+  `topics/_template/TIER/outline.md`.
+
 ## 2026-10-01 (later) — Round-2 reviews applied
 - **Manim play cache is off everywhere.** A cached play skips code, updaters and `add_sound`
   (narration silently dropped on re-renders) and advances time by the unquantised duration.

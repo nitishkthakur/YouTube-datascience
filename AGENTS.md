@@ -134,6 +134,8 @@ Videos are software. There is a spec, a library, and code. Never write scene cod
 
 ### 5.1 `script.md` — the master document (written by Nitish, reviewed line by line)
 
+How it comes to exist — the standard procedure: Nitish writes **`outline.md`** (his points, in his order, any must-say phrasing); the agent drafts **`script.proposed.md`** in the full script format with every addition it proposes clearly marked (skill `draft-script`); Nitish edits and promotes that to **`script.md`**. The agent never writes `script.md` itself. Then the shot list, then **Nitish records**, then the agent animates against his voice.
+
 Full narration, verbatim, split into **scenes** and **beats**. Every equation that will appear on screen is written here in LaTeX **and checked by Nitish** before any code exists. This is the reviewed artifact; the video, article, and shorts are derived from it.
 
 Header block:
@@ -239,14 +241,14 @@ Always render through `tools/render.py` — it sets PATH for TinyTeX, orientatio
 
 Manim has no timeline. Timing is derived from audio, never guessed.
 
-**The workflow (script first, voice last):**
+**The standard procedure (agreed 2026-10-01):**
 
-1. **Script.** Nitish writes `script.md` (optionally by talking it through into a voice memo; the agent may transcribe that into a *draft* for him to edit). Narration, `[[marks]]`, equations.
-2. **Placeholder voice.** `uv run --extra tts python tools/tts_placeholder.py <tier_dir>` generates Kokoro audio per beat into `<audio root>/<concept>/<tier>/placeholder/` with word timings. Calibrate `tts_speed` so placeholder durations match Nitish's pace.
-3. **Animate against the placeholder.** Shot list → scenes → review loop (§8). Nitish reviews video *with* the placeholder voice and may still edit wording; because scenes reference beats and equations by id, edited words need no code change — regenerate placeholders and re-render.
-4. **Freeze.** Nitish sets `status: frozen`.
-5. **Record.** In Audacity, one take per scene, a label at each beat boundary named with the beat key (`s03_b01`, …), *Export Multiple* by labels → `<audio root>/<concept>/<tier>/s03_b01.wav` … (details in `assets/audio/README.md`).
-6. **Swap.** Re-render. Recorded files win over placeholders automatically; every beat re-times itself to the real audio. Any beat whose animations no longer fit raises `NarrationOverrun` — shorten the animation, never speed the audio.
+1. **Outline (Nitish).** `outline.md`: the exact points, in sequence, plus any must-say phrasing, data wishes, target length.
+2. **Proposed script (agent).** `script.proposed.md` — the outline in full script format, with every addition the agent proposes (a hook, a missing step, a "how it breaks" beat, a practitioner check, a transition) marked `> PROPOSED ADDITION` and listed at the top. Skill `draft-script`.
+3. **Script (Nitish).** He edits and promotes the proposal to `script.md`, decides what stays, approves `[[marks]]`, later sets `status: frozen`. The agent drafts the shot list (FOCUS / STATE / TRANSITION per beat); Nitish approves it with `tools/approve.py`.
+4. **Voiceover (Nitish).** In Audacity, one take per scene, a label at each beat boundary named with the beat key (`s03_b01`, …), *Export Multiple* by labels → `<audio root>/<concept>/<tier>/s03_b01.wav` …, then `tools/audio_manifest.py register` (details in `assets/audio/README.md`).
+5. **Animation (agent).** Scenes are built and timed against his recording. Before it exists, `uv run --extra tts python tools/tts_placeholder.py <tier_dir>` gives a Kokoro placeholder with word timings for timing drafts only (calibrate `tts_speed` to his pace). Recorded files win over placeholders automatically; a beat whose animations no longer fit raises `NarrationOverrun` — shorten the animation, never speed the audio.
+6. **Review and produce.** §8 review loop on every scene; Nitish's watch notes in `NOTES.md`; `tools/pipeline.py` for the deliverables (`channel/pipeline.md`).
 
 **Rules:**
 - Audio is **not in git**. Default root is `assets/audio/` (ignored); set `DSANIM_AUDIO_DIR` to keep it on a backed-up drive. Beat 3.2 → `s03_b02.wav`.
@@ -339,5 +341,5 @@ Every piece of code ships with tests in the same change. Nitish's rule: **tests 
 ## 15. Agent tooling and keeping docs current
 
 - **Hooks** (`.claude/settings.json`): after every edit to a `.py` file, `tools/lint_scenes.py --hook` runs and blocks on violations (ManimGL-isms, hex colours outside `palette.py`, inline LaTeX or Manim colour constants in topic scenes). Edits to any `script.md` require Nitish's approval.
-- **Skills** (`.claude/skills/`): `new-topic`, `draft-shotlist`, `build-scene`, `render-review`, `narration`, `produce`. They encode §5–§8 and `channel/pipeline.md` step by step; Codex and other agents should follow the same steps from this file. Guard-rails that do not depend on Claude Code: `.pre-commit-config.yaml`, `.github/workflows/ci.yml`, and the render-time guards (frozen script, placeholder audio, safe area, overrun).
+- **Skills** (`.claude/skills/`): `new-topic`, `draft-script`, `draft-shotlist`, `build-scene`, `render-review`, `narration`, `produce`. They encode §5–§8 and `channel/pipeline.md` step by step; Codex and other agents should follow the same steps from this file. Guard-rails that do not depend on Claude Code: `.pre-commit-config.yaml`, `.github/workflows/ci.yml`, and the render-time guards (frozen script, placeholder audio, safe area, overrun).
 - **Keep docs current.** When a convention, tool or structure changes, update this file (and the nested `AGENTS.md`), log it in `channel/decisions.md`, and keep `.claude/` skills consistent — in the same change.

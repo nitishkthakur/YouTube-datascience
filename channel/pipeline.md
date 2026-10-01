@@ -7,7 +7,8 @@ not listed as Nitish's input here, he does not have to provide it.
 
 | # | Input | Where | When | Checked by |
 |---|---|---|---|---|
-| 1 | **Script** — narration in beats, `[[marks]]`, equations with ids | `topics/<concept>/<tier>/script.md` | first | `tools/check_script.py`, parse errors are explicit |
+| 1 | **Outline** — his points, in sequence (+ must-say phrasing, data, length) | `topics/<concept>/<tier>/outline.md` | first | the agent asks for it if missing |
+| 1b | **Script** — he edits the agent's `script.proposed.md` (additions marked) into `script.md`: narration in beats, `[[marks]]`, equations with ids | `topics/<concept>/<tier>/script.md` | after the proposal | `tools/check_script.py`, parse errors are explicit |
 | 2 | **Decisions the shot list needs** — dataset, estimator, band width, what each Short is | concept `README.md` / answers to the agent's questions | before scenes | agent asks ONE question at a time (AGENTS.md §12) |
 | 3 | **Shot-list approval** | `uv run python tools/approve.py <tier>` (binds `Status: approved <hash>` to the text; later edits show as "edited after approval") | before scene code | `status.py` |
 | 4 | **Freeze** | `script.md` → `status: frozen` | when words are final | final renders refuse unfrozen scripts |
