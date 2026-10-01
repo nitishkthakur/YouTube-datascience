@@ -25,8 +25,9 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # sibling tools importable (render_all, assemble)
 ENCODE = ["-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p",
-          "-c:a", "aac", "-ar", "48000", "-ac", "2"]
+          "-c:a", "pcm_s16le", "-ar", "48000", "-ac", "2"]   # PCM pieces; AAC once in finalize()
 
 
 def load_chunks(tier: Path) -> list[dict]:
@@ -54,18 +55,21 @@ def beat_window(beats_json: Path, from_beat: str | None, to_beat: str | None
 
 
 def cut(video: Path, dest: Path, start: float | None, end: float | None) -> Path:
+    """Frame-accurate cut, re-encoded. `-t` (a length) rather than `-to`: unambiguous on every ffmpeg."""
+    dest = dest.with_suffix(".mov")
     dest.parent.mkdir(parents=True, exist_ok=True)
     cmd = ["ffmpeg", "-v", "error", "-y"]
     if start is not None:
         cmd += ["-ss", f"{start:.3f}"]
     if end is not None:
-        cmd += ["-to", f"{end:.3f}"]
+        cmd += ["-t", f"{end - (start or 0.0):.3f}"]
     cmd += ["-i", str(video), *ENCODE, str(dest)]
     subprocess.run(cmd, check=True)
     return dest
 
 
 def concat(parts: list[Path], dest: Path) -> Path:
+    dest = dest.with_suffix(".mov")
     listing = dest.with_suffix(".concat.txt")
     listing.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0",
@@ -113,6 +117,17 @@ def main(argv: list[str] | None = None) -> list[Path]:
         return []
     files = sorted({f for c in chunks for f in c["scenes"]})
     entries = ensure_vertical_renders(tier, files, args.quality, args.allow_placeholder, args.jobs)
+    from assemble import check_provenance  # tools/ is on sys.path when run as a script
+    scenes = [{"file": entries[f]["file"], "scene_number": entries[f]["scene_number"], "class": entries[f]["class"],
+               "mp4": str(tier / "renders" / f"{entries[f]['class']}_{args.quality}_v.mp4")} for f in files]
+    stale = check_provenance(tier, scenes, args.quality, True)
+    if stale:
+        cmd = [sys.executable, str(ROOT / "tools" / "render_all.py"), str(tier), "-q", args.quality,
+               "--vertical", "--scenes", *[f for f in files if entries[f]["class"] in stale], "--jobs", str(args.jobs)]
+        if args.allow_placeholder:
+            cmd.append("--allow-placeholder")
+        print(f"re-rendering stale vertical scenes: {stale}")
+        subprocess.run(cmd, check=True, cwd=ROOT)
 
     outputs = []
     for c in chunks:
@@ -126,12 +141,16 @@ def main(argv: list[str] | None = None) -> list[Path]:
                 c.get("from_beat") if i == 0 else None,
                 c.get("to_beat") if i == len(c["scenes"]) - 1 else None)
             parts.append(cut(video, work / f"{i:02d}_{e['class']}.mp4", start, end))
-        out = concat(parts, tier / "renders" / "shorts" / f"{c['name']}_{args.quality}.mp4")
-        print(f"short {out}")
+        from assemble import finalize  # tools/ is on sys.path when run as a script
+
+        joined = concat(parts, work / "joined.mp4")
+        out = tier / "renders" / "shorts" / f"{c['name']}_{args.quality}.mp4"
+        loud = finalize(joined, out, reencode=False)
+        lufs = loud["output_lufs"]
+        print(f"short {out}  ({'silent' if lufs is None else f'{lufs:.1f} LUFS'})")
         outputs.append(out)
     return outputs
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
     main()

@@ -12,17 +12,28 @@ Exit 0 always; read the "next" list at the end.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import yaml
+
 from dsanim import narration
 from dsanim.script import ScriptError, parse
 
 ROOT = Path(__file__).resolve().parents[1]
 QUALITIES = {"l": "480p15", "m": "720p30", "h": "1080p60"}
+
+
+def _tool(name):
+    spec = importlib.util.spec_from_file_location(f"tools_{name}", Path(__file__).with_name(f"{name}.py"))
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 
 @dataclass
@@ -57,6 +68,8 @@ def report(tier: Path) -> list[Item]:
                       f"status: {script.meta.get('status', 'draft')}",
                       "set `status: frozen` in the front matter once narration and equations are final"))
 
+    items.append(Item("NITISH", "audio root", True, str(narration.beat_dir(script)),
+                      "set DSANIM_AUDIO_DIR in .env to move it"))
     recorded = placeholder = missing = 0
     for b in script.beats.values():
         try:
@@ -75,20 +88,33 @@ def report(tier: Path) -> list[Item]:
                       f"{recorded} recorded, {placeholder} placeholder, {missing} missing of {n}",
                       f"record in Audacity, export one WAV per beat to {narration.beat_dir(script)} "
                       "(assets/audio/README.md)"))
+    if recorded:
+        am = _tool("audio_manifest")
+        states = am.verify(tier)
+        if not states:
+            items.append(Item("NITISH", "recordings registered (audio_manifest.json)", False, "none",
+                              f"uv run python tools/audio_manifest.py register {tier}"))
+        else:
+            bad = {k: v for k, v in states.items() if v != "ok"}
+            items.append(Item("NITISH", "recordings match the script's words", not bad,
+                              ", ".join(f"{k}: {v}" for k, v in bad.items()) or f"{len(states)} ok",
+                              "stale = words changed after recording: re-record that beat or restore the words; "
+                              "modified = re-register"))
     items.append(Item("CODE", "placeholder audio for beats without a recording",
                       None if recorded == n else (missing == 0),
                       f"{placeholder} placeholder, {missing} missing",
                       f"uv run --extra tts python tools/tts_placeholder.py {tier}"))
 
     shot = tier / "shotlist.md"
-    shot_status = None
+    state, detail = ("none", "no shotlist.md")
     if shot.exists():
-        m = re.search(r"^Status:\s*(\w+)", shot.read_text(), re.M)
-        shot_status = m.group(1).lower() if m else None
-    items.append(Item("AGENT", "shotlist.md drafted", shot.exists() and shot_status is not None,
-                      f"Status: {shot_status}", "skill draft-shotlist"))
-    items.append(Item("NITISH", "shotlist.md approved (Status: approved)", shot_status == "approved",
-                      f"Status: {shot_status}", "review shotlist.md and set `Status: approved`"))
+        state, detail = _tool("approve").approval_state(shot.read_text())
+    items.append(Item("AGENT", "shotlist.md drafted", shot.exists() and state != "none",
+                      detail, "skill draft-shotlist"))
+    items.append(Item("NITISH", "shotlist.md approved and unchanged since", state == "approved",
+                      {"approved": "approved", "edited": "edited after approval", "unbound": detail,
+                       "draft": f"Status: {detail}", "none": detail}[state],
+                      f"read shotlist.md, then `uv run python tools/approve.py {tier}` (binds the approval to the text)"))
 
     files = scene_files(tier)
     wanted = sorted(script.scenes)
@@ -98,24 +124,35 @@ def report(tier: Path) -> list[Item]:
                       "skill build-scene (one scene at a time)"))
 
     renders = tier / "renders"
+    classes = {}
+    for f in (tier / "scenes").glob("s*.py"):
+        m = re.search(r"^class\s+(\w+)\s*\(\s*DSScene\s*\)", f.read_text(), re.M)
+        if m:
+            classes[f.name] = m.group(1)
     for q, label in QUALITIES.items():
-        for vertical in (False, True):
-            tag = f"{q}{'_v' if vertical else ''}"
-            manifest = renders / f"manifest_{tag}.json"
-            ok = None
-            detail = "not rendered"
-            if manifest.exists():
-                scenes = json.loads(manifest.read_text())["scenes"]
-                present = [s for s in scenes if Path(s["mp4"]).exists()]
-                ok = len(present) == len(wanted)
-                detail = f"{len(present)}/{len(wanted)} scenes"
-            if not vertical or q != "k":
-                items.append(Item("CODE", f"scene renders {label}{' vertical' if vertical else ''}", ok, detail,
-                                  f"uv run python tools/render_all.py {tier} -q {q}{' --vertical' if vertical else ''}"))
-    sheets = [p for p in renders.glob("*_m.sheet.png")] if renders.exists() else []
-    items.append(Item("AGENT", "contact sheets at 720p inspected (renders/*_m.sheet.png)",
+        present = [c for c in classes.values() if (renders / f"{c}_{q}.mp4").exists()]
+        items.append(Item("CODE", f"scene renders {label}", len(present) == len(wanted) if wanted else None,
+                          f"{len(present)}/{len(wanted)} scenes on disk",
+                          f"uv run python tools/render_all.py {tier} -q {q}"))
+    chunks = tier / "shorts" / "chunks.yaml"
+    chunk_list = (yaml.safe_load(chunks.read_text()) or {}).get("chunks", []) if chunks.exists() else []
+    needed_v = sorted({f for c in chunk_list for f in c.get("scenes", [])})
+    have_v = [f for f in needed_v if f in classes and (renders / f"{classes[f]}_h_v.mp4").exists()]
+    items.append(Item("CODE", "vertical 1080x1920 renders for the scenes the chunks use",
+                      (len(have_v) == len(needed_v)) if needed_v else None,
+                      f"{len(have_v)}/{len(needed_v)}" if needed_v else "no chunks declared",
+                      f"uv run python tools/make_shorts.py {tier} -q h"))
+    sheets = [p for p in renders.glob("*_m.sheet.png") if renders.exists()
+              and (p.with_name(p.name.replace(".sheet.png", ".mp4")).exists()
+                   and p.stat().st_mtime >= p.with_name(p.name.replace(".sheet.png", ".mp4")).stat().st_mtime - 1)]
+    items.append(Item("CODE", "contact sheets at 720p exist and are newer than their renders",
                       len(sheets) >= len(wanted) if wanted else None,
-                      f"{len(sheets)} sheets for {len(wanted)} scenes", "skill render-review"))
+                      f"{len(sheets)} sheets for {len(wanted)} scenes", "render_all.py -q m --sheet"))
+    notes_text = (tier / "NOTES.md").read_text() if (tier / "NOTES.md").exists() else ""
+    reviewed = [p.name for p in sheets if p.name in notes_text or p.name.replace("_m.sheet.png", "") in notes_text]
+    items.append(Item("AGENT", "sheet inspection logged in NOTES.md (names each reviewed sheet)",
+                      (len(reviewed) >= len(wanted)) if wanted else None,
+                      f"{len(reviewed)}/{len(wanted)} sheets mentioned", "skill render-review, then log the sheet names"))
 
     topic, tname = script.meta.get("topic", tier.parent.name), script.meta.get("tier", tier.name)
     for q, label in QUALITIES.items():
@@ -126,23 +163,26 @@ def report(tier: Path) -> list[Item]:
     items.append(Item("CODE", "chapters.txt + subtitles.srt", (publish / "chapters.txt").exists()
                       and (publish / "subtitles.srt").exists(), "", "produced by assemble.py"))
 
-    chunks = tier / "shorts" / "chunks.yaml"
     items.append(Item("NITISH", "shorts/chunks.yaml (which beats become vertical chunks)",
-                      chunks.exists() or None, "optional" if not chunks.exists() else "declared",
+                      chunks.exists() or None, "optional" if not chunks.exists() else f"{len(chunk_list)} declared",
                       "list chunks (tools/make_shorts.py docstring); an agent can propose them"))
-    if chunks.exists():
-        import yaml
-        names = [c["name"] for c in (yaml.safe_load(chunks.read_text()) or {}).get("chunks", [])]
+    if chunk_list:
+        names = [c["name"] for c in chunk_list]
         made = [n for n in names if (renders / "shorts" / f"{n}_h.mp4").exists()]
         items.append(Item("CODE", "vertical chunks rendered (1080x1920)", len(made) == len(names),
                           f"{len(made)}/{len(names)}", f"uv run python tools/make_shorts.py {tier} -q h"))
 
     desc = publish / "description.md"
-    filled = desc.exists() and "<!--" not in desc.read_text().split("## Chapters")[0]
-    items.append(Item("NITISH", "publish/description.md written", filled, "", "fill the description (title, hook, links)"))
+    desc_text = desc.read_text() if desc.exists() else ""
+    title = re.search(r"^title:\s*(.+)$", desc_text, re.M)
+    items.append(Item("NITISH", "publish/description.md: title chosen", bool(title and title.group(1).strip().strip('"')),
+                      title.group(1).strip() if title else "no `title:` line",
+                      "put `title: ...` at the top of publish/description.md (script.md only lists candidates)"))
+    filled = bool(desc_text) and "<!--" not in desc_text.split("## Chapters")[0]
+    items.append(Item("NITISH", "publish/description.md written", filled, "", "fill the description (hook, links); chapters are pasted from chapters.txt"))
     thumb = any((publish / f"thumbnail.{ext}").exists() for ext in ("png", "jpg", "jpeg"))
-    items.append(Item("NITISH", "publish/thumbnail.png chosen", thumb, "",
-                      "pick a frame that states the misconception (AGENTS.md §11); an agent can propose 3"))
+    items.append(Item("NITISH", "publish/thumbnail.png chosen (1280x720 min, 16:9, < 2 MB)", thumb, "",
+                      "a frame that states the misconception + 3-5 big words (AGENTS.md §11); an agent can propose 3"))
     notes = tier / "NOTES.md"
     logged = notes.exists() and len(notes.read_text().split("## Log", 1)[-1].strip()) > 0
     items.append(Item("AGENT", "NOTES.md has a log", logged, "", "append decisions, breakages, render times"))

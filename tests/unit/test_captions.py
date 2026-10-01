@@ -16,6 +16,14 @@ def test_chunks_break_at_sentence_end():
     assert WORDS[groups[0][-1]] == "second."
 
 
+def test_chunks_break_at_phrase_boundaries_once_long_enough():
+    words = "Pick a weight, say fifteen hundred kilograms: here are the cars.".split()
+    groups = C.chunk_words(words, max_words=12, max_chars=100)
+    assert [words[g[-1]] for g in groups] == ["weight,", "kilograms:", "cars."]
+    short = "Yes, and no.".split()                      # "Yes," is too short to close a card
+    assert C.chunk_words(short, max_words=12, max_chars=100) == [[0, 1, 2]]
+
+
 def test_chunks_respect_max_chars():
     groups = C.chunk_words(["aaaa", "bbbb", "cccc", "dddd"], max_words=10, max_chars=9)
     assert [len(g) for g in groups] == [2, 2]

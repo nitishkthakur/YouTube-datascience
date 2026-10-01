@@ -2,7 +2,7 @@
 
 from manim import LEFT, BraceBetweenPoints, FadeIn, FadeOut, Indicate, ValueTracker, linear, smooth
 
-from common.stage import (BAND_X, BAND_Y, GEN_TERMS, HALF_WIDTH, NOISE_TERMS, OLS_TERMS, SWEEP,
+from common.stage import (BAND_X, BAND_Y, GEN_TERMS, HALF_WIDTH, NOISE_TERMS, OLS_TERMS, PARK_X, SWEEP,
                           build_stage, roles_for)
 from dsanim import palette as P, typography as T
 from dsanim.components.conditional import SIGMA_FLOOR, band
@@ -23,8 +23,8 @@ class Scene04(DSScene):
         y0 = st.line_y(BAND_X)
         left_x = BAND_X - HALF_WIDTH - 30
         bracket = BraceBetweenPoints(axes.c2p(left_x, y0 - st.sigma), axes.c2p(left_x, y0 + st.sigma),
-                                     direction=LEFT, color=P.CONCEPT)
-        sigma_label = T.symbol("sigma", color=P.CONCEPT).next_to(bracket, LEFT, 0.1)
+                                     direction=LEFT, color=P.MODEL)
+        sigma_label = T.symbol("sigma", color=P.MODEL).next_to(bracket, LEFT, 0.1)
         self.add(st.chart, scatter, line, eq_noise, the_band, bracket, sigma_label)  # = Scene 3's last frame
 
         x = ValueTracker(BAND_X)
@@ -67,14 +67,16 @@ class Scene04(DSScene):
             ledger.live()
             self.play(x.animate.set_value(SWEEP[0]), run_time=1.5, rate_func=smooth)
             self.play(x.animate.set_value(SWEEP[1]), run_time=5.5, rate_func=linear)
-            for m in (the_band, scatter, ols_slice, real_slice, ledger):
-                m.clear_updaters()
 
         # --- Beat 4.3 — the honest statement ------------------------------------------------------
         with self.beat("4.3", extend=1.5) as b:
             b.wait_until("general")
             eq_gen = st.place_eq(self.eq("general", terms=GEN_TERMS, roles=roles_for(GEN_TERMS)))
-            self.play(morph(eq_ols, eq_gen),
-                      run_time=P.RUN_TIME)
+            self.play(morph(eq_ols, eq_gen), run_time=P.RUN_TIME)
+            # "its centre moves with x, and so does its spread": slide back to where both bells
+            # are legible — the teal one visibly widens as it goes (updaters still live)
+            self.play(x.animate.set_value(PARK_X), run_time=2.5, rate_func=smooth)
+            for m in (the_band, scatter, ols_slice, real_slice, ledger):
+                m.clear_updaters()
             self.play(Indicate(real_slice, color=P.CONCEPT, scale_factor=1.05), run_time=P.RUN_TIME)
             self.play(Indicate(line, color=P.MODEL, scale_factor=1.02), run_time=P.RUN_TIME)

@@ -9,7 +9,7 @@ from manim import Dot, VGroup
 
 from dsanim import palette as P
 
-DOT_RADIUS = 0.035  # ~4.7 px at 1080p: 400 points stay distinguishable without clumping
+DOT_RADIUS = 0.045  # ~6 px at 1080p: 400 points still distinguishable, no longer dust
 
 
 class Scatter(VGroup):

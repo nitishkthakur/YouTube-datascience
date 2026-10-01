@@ -41,6 +41,11 @@ from dsanim.script import Script, parse
 layout.apply_orientation()
 config.background_color = P.BG
 config.tex_template = typography.tex_template()
+# Manim's partial-movie cache is off for every render: a cached play skips the animation code,
+# its updaters AND add_sound (narration silently dropped on re-renders), and advances time by
+# the unquantised duration. Incremental re-renders happen per scene instead (render_all.py
+# keeps scenes whose inputs are unchanged).
+config.disable_caching = True
 
 
 class NarrationOverrun(RuntimeError):
@@ -52,6 +57,10 @@ class SafeAreaViolation(RuntimeError):
 
 
 class ScriptNotFrozen(RuntimeError):
+    pass
+
+
+class RecordingStale(RuntimeError):
     pass
 
 
@@ -83,12 +92,16 @@ def _paints(m) -> bool:
 
 
 def _visible_bbox(mobject):
-    """(lo, hi) corners over the family members that actually paint, or None."""
-    pts = [m.points for m in mobject.family_members_with_points() if _paints(m)]
-    if not pts:
+    """(lo, hi) corners over the family members that actually paint, padded by half the widest
+    stroke (a thick line flush with the edge still crosses it), or None."""
+    members = [m for m in mobject.family_members_with_points() if _paints(m)]
+    if not members:
         return None
-    allp = np.concatenate(pts)
-    return allp.min(axis=0), allp.max(axis=0)
+    allp = np.concatenate([m.points for m in members])
+    units_per_px = config.frame_width / config.pixel_width
+    stroke = max((m.get_stroke_width() for m in members if isinstance(m, VMobject)), default=0.0)
+    pad = 0.5 * stroke * units_per_px * (config.pixel_height / 1080)   # stroke widths are ~px at 1080p
+    return allp.min(axis=0) - pad, allp.max(axis=0) + pad
 
 
 def _visible(mobject) -> bool:
@@ -131,20 +144,22 @@ class BeatTracker:
     def until(self, mark: str, minimum: float = 0.1) -> float:
         """Seconds from now until [[mark]] is spoken — use as a run_time (whole frames)."""
         dt = self.audio.mark_time(mark) - self.elapsed
-        if dt < minimum:
+        late = dt < minimum
+        if late:
             warnings.warn(f"beat {self.audio.beat.id}: already {-dt:.2f}s past [[{mark}]]")
         dt = frames(max(dt, minimum))
-        self.marks_hit[mark] = self.elapsed + dt
+        self.marks_hit[mark] = {"hit": self.elapsed + dt, "late": late}
         return dt
 
     def wait_until(self, mark: str) -> None:
         """Hold until [[mark]] is spoken. Warns if the mark has already passed."""
         dt = self.audio.mark_time(mark) - self.elapsed
+        late = dt < -1 / config.frame_rate
         if dt > 1 / config.frame_rate:
             self.scene.wait(frames(dt))
-        elif dt < -1 / config.frame_rate:
+        elif late:
             warnings.warn(f"beat {self.audio.beat.id}: wait_until([[{mark}]]) called {-dt:.2f}s late")
-        self.marks_hit[mark] = self.elapsed
+        self.marks_hit[mark] = {"hit": self.elapsed, "late": late}
 
 
 class DSScene(Scene):
@@ -207,13 +222,27 @@ class DSScene(Scene):
                 f"beat {beat_id} uses PLACEHOLDER audio in a final render "
                 "(render.py --allow-placeholder makes a watermarked test render instead)")
         if self._watermark is None:
+            # lives in the bottom gutter, outside the safe area, so it never hides content
+            frame, safe = layout.frame(), self.layout.safe
             wm = typography.label("PLACEHOLDER VOICE — NOT FOR PUBLICATION", color=P.ERROR)
-            if wm.width > 0.6 * self.layout.safe.width:
-                wm.scale_to_fit_width(0.6 * self.layout.safe.width)
-            wm.move_to([self.layout.safe.right, self.layout.safe.bottom, 0],
-                       aligned_edge=np.array([1.0, -1.0, 0.0]))
+            gutter = safe.bottom - frame.bottom
+            wm.scale_to_fit_height(min(wm.height, 0.6 * gutter))
+            if wm.width > 0.6 * safe.width:
+                wm.scale_to_fit_width(0.6 * safe.width)
+            wm.move_to([safe.right, frame.bottom + 0.2 * gutter, 0], aligned_edge=np.array([1.0, -1.0, 0.0]))
             self._watermark = wm
             self.add_foreground_mobject(wm)
+
+    def _check_recording(self, beat) -> None:
+        """A final render refuses a recording whose words changed since it was registered."""
+        manifest = self.script.path.parent / "audio_manifest.json"
+        if not manifest.exists():
+            return
+        entry = (json.loads(manifest.read_text()).get("beats") or {}).get(beat.key)
+        if entry and entry.get("text_sha256") != hashlib.sha256(beat.text.encode()).hexdigest():
+            raise RecordingStale(
+                f"beat {beat.id}: the script's words changed after {entry['wav']} was recorded "
+                "(tools/audio_manifest.py verify) — re-record or restore the words")
 
     # --- captions (vertical) -----------------------------------------------------------------
     def _caption_track(self, cards: list[captions.Caption], start_time: float) -> VGroup:
@@ -225,7 +254,7 @@ class DSScene(Scene):
         """
         region = self.layout.caption
         holder = VGroup(*[
-            region.fit(typography.text("\n".join(textwrap.wrap(c.text, captions.MAX_CHARS)),
+            region.fit(typography.text("\n".join(textwrap.wrap(c.text, captions.LINE_CHARS)),
                                        size=P.SIZE_CAPTION), pad=0.1).set_opacity(0.0)
             for c in cards])
         holder.current = -1
@@ -258,8 +287,11 @@ class DSScene(Scene):
         """Visible top-level mobjects whose painted bounding box leaves the safe area (AGENTS.md §4)."""
         out = []
         for m in self.mobjects:
+            if m is self._watermark:
+                continue
             box = _visible_bbox(m)
-            if box is not None and not self.layout.safe.contains_box(*box, tol=1e-3):
+            # tol ≈ 2.7 px at 1080p: a hairline drawn exactly on the safe border is not a violation
+            if box is not None and not self.layout.safe.contains_box(*box, tol=0.02):
                 (x0, y0, _), (x1, y1, _) = box
                 out.append(f"{type(m).__name__} spans x[{x0:.2f},{x1:.2f}] y[{y0:.2f},{y1:.2f}]")
         return out
@@ -286,7 +318,11 @@ class DSScene(Scene):
         bad = self.safe_area_violations()
         if bad:
             msg = f"{where}: outside safe area {self.layout.safe}: " + "; ".join(bad)
-            if self.final:
+            # an error in finals, and already at 720p review renders once the script is frozen —
+            # so the problem surfaces before the long render, not after it (short side: a 9:16
+            # render at -ql is 480x854)
+            review_quality = min(config.pixel_width, config.pixel_height) >= 720
+            if self.final or (self.script.frozen and review_quality):
                 raise SafeAreaViolation(msg)
             warnings.warn(msg)
         overlaps = self.text_overlaps()
@@ -324,7 +360,15 @@ class DSScene(Scene):
             self.used_placeholder = True
             if self.final:
                 self._placeholder_in_final(beat_id)
+        if audio.path is None and self.final and not self.test_render:
+            raise RuntimeError(f"beat {beat_id} has no narration at all (neither recorded nor placeholder) "
+                               "— a final render needs a recording")
+        if audio.word_times is not None and not audio.aligned:
+            warnings.warn(f"beat {beat_id}: {len(audio.word_times)} word timings for {len(b.words)} words — "
+                          "marks and captions fall back to interpolation")
         if audio.path:
+            if self.final and not self.test_render and not audio.placeholder:
+                self._check_recording(b)
             self.add_sound(str(audio.path))
         tracker = BeatTracker(self, audio, extend)
         cards = captions.captions_for(b.words, audio.duration, audio.word_times)
@@ -348,12 +392,12 @@ class DSScene(Scene):
         self.beat_log.append({
             "id": b.id, "key": b.key, "start": tracker.start,
             "speech_end": tracker.start + audio.duration, "end": float(self.renderer.time),
-            "extend": extend, "audio": audio.kind,
+            "extend": extend, "audio": audio.kind, "aligned": audio.aligned,
             "audio_file": str(audio.path) if audio.path else None,
             "audio_sha256": _sha256(audio.path) if audio.path else None,
             "text": b.text,
-            "marks": {name: {"planned": audio.mark_time(name), "hit": t}
-                      for name, t in tracker.marks_hit.items()},
+            "marks": {name: {"planned": audio.mark_time(name), **info}
+                      for name, info in tracker.marks_hit.items()},
             "captions": [{"text": c.text, "start": c.start, "end": c.end} for c in cards],
         })
         self._check_safe_area(f"end of beat {beat_id}")

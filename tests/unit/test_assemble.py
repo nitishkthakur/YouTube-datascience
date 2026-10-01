@@ -29,10 +29,38 @@ def test_normalise_adds_audio_and_concat_keeps_total_duration(tmp_path):
     a = synth(tmp_path / "a.mp4", 2, audio=True)
     b = synth(tmp_path / "b.mp4", 3, audio=False)
     assert assemble.has_audio(a) and not assemble.has_audio(b)
-    parts = [assemble.normalise(a, tmp_path / "a.n.mp4"), assemble.normalise(b, tmp_path / "b.n.mp4")]
-    assert all(assemble.has_audio(p) for p in parts)
+    parts = [assemble.normalise(a, tmp_path / "a.n"), assemble.normalise(b, tmp_path / "b.n")]
+    assert all(assemble.has_audio(p) and p.suffix == ".mov" for p in parts)
     out = assemble.concat(parts, tmp_path / "out.mp4")
-    assert assemble.duration(out) == pytest.approx(5.0, abs=0.2)
+    assert assemble.duration(out) == pytest.approx(5.0, abs=0.1)
+    final = assemble.finalize(out, tmp_path / "final.mp4", reencode=False)
+    assert assemble.duration(tmp_path / "final.mp4") == pytest.approx(5.0, abs=0.1)
+    assert final["output_lufs"] == pytest.approx(-14, abs=2)
+
+
+def test_concat_refuses_mismatched_video_params(tmp_path):
+    a = synth(tmp_path / "a.mp4", 1, audio=True)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=size=160x90:rate=15",
+                    "-t", "1", "-pix_fmt", "yuv420p", str(tmp_path / "b.mp4")], check=True)
+    parts = [assemble.normalise(a, tmp_path / "a.n"), assemble.normalise(tmp_path / "b.mp4", tmp_path / "b.n")]
+    with pytest.raises(SystemExit, match="differ"):
+        assemble.concat(parts, tmp_path / "out.mp4")
+
+
+def test_provenance_detects_stale_renders(tmp_path):
+    render_all = load_tool("render_all")
+    tier = tmp_path / "topic" / "L1"
+    (tier / "scenes").mkdir(parents=True)
+    (tier / "renders").mkdir()
+    (tier / "script.md").write_text("---\ntopic: t\ntier: L1\n---\n")
+    f = tier / "scenes" / "s01_a.py"
+    f.write_text("class A(DSScene): pass\n")
+    scenes = [{"file": str(f), "scene_number": 1, "class": "A", "mp4": str(tier / "renders" / "A_l.mp4")}]
+    assert assemble.check_provenance(tier, scenes, "l", False) == ["A"]          # no stamp yet
+    (tier / "renders" / "A_l.inputs.sha").write_text(render_all.inputs_hash(scenes[0], tier, "l", False))
+    assert assemble.check_provenance(tier, scenes, "l", False) == []
+    f.write_text("class A(DSScene): changed = True\n")
+    assert assemble.check_provenance(tier, scenes, "l", False) == ["A"]
 
 
 def test_chapters_and_subtitles_from_sidecars(tmp_path):

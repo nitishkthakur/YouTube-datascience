@@ -255,6 +255,8 @@ Manim has no timeline. Timing is derived from audio, never guessed.
 - At the end of every beat the scene checks that everything visible is inside the safe area: a warning while iterating, an error (`SafeAreaViolation`) in `-q h`/`-q k` renders.
 - Mark times use `<key>.words.json` word timings when present (Kokoro provides them; recorded audio will get them from a forced-alignment tool, `tools/align.py`, still to be built) and otherwise interpolate by word position.
 - Placeholder audio is **never shipped**: `-q h`/`-q k` renders abort if any beat uses it.
+- Recordings are **registered** (`tools/audio_manifest.py register`, writes `<tier>/audio_manifest.json`, committed) so each WAV is bound to the words it was recorded from; a beat whose words changed afterwards is *stale* and a final render refuses it. Final renders also run with Manim's cache disabled (cached plays skip code).
+- `[[marks]]` in recorded audio are interpolated by word position until `tools/align.py` (forced alignment) exists — build it before the first real recording.
 
 ## 8. The review loop (mandatory — agents cannot see)
 
@@ -290,10 +292,10 @@ A scene reported "done" without an inspected contact sheet is not done.
 ## 11. Definition of done for a topic
 
 - [ ] `script.md` reviewed and frozen by Nitish (equations checked)
-- [ ] `shotlist.md` approved
+- [ ] `shotlist.md` approved with `tools/approve.py` (binds the approval to the text)
 - [ ] Every scene passes the §8 review loop at `-qm`
 - [ ] `uv run pytest` passes (including the regression tests added for this topic's new components)
-- [ ] Narration recorded; all beats fit their audio
+- [ ] Narration recorded and registered (`tools/audio_manifest.py register`); all beats fit their audio
 - [ ] Vertical layouts render for the 2–3 beats chosen as shorts
 - [ ] Final 1080p60 render assembled with FFmpeg; 4K master queued
 - [ ] `article.md` derived and reviewed

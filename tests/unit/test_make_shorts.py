@@ -37,6 +37,7 @@ def test_cut_and_concat(tmp_path):
                     "-pix_fmt", "yuv420p", "-c:a", "aac", str(src)], check=True)
     a = make_shorts.cut(src, tmp_path / "a.mp4", 1.0, 3.0)
     b = make_shorts.cut(src, tmp_path / "b.mp4", None, 1.0)
+    assert a.suffix == ".mov" and b.suffix == ".mov"
     out = make_shorts.concat([a, b], tmp_path / "out.mp4")
     probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of",
                             "default=nw=1:nk=1", str(out)], capture_output=True, text=True)

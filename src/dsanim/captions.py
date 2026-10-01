@@ -11,9 +11,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-MAX_WORDS = 6    # per card — read at a glance on a phone
-MAX_CHARS = 36   # per card — fits the caption band at SIZE_CAPTION in vertical
+MAX_WORDS = 9        # per card — read at a glance on a phone
+MAX_CHARS = 60       # per card, over at most two lines of LINE_CHARS
+LINE_CHARS = 32      # wrap width of one caption line
 SENTENCE_END = ".!?;"
+PHRASE_END = ",:"    # a phrase break closes a card once it has a few words
+MIN_PHRASE_WORDS = 3
 
 
 @dataclass(frozen=True)
@@ -27,8 +30,9 @@ def chunk_words(words: list[str], max_words: int = MAX_WORDS, max_chars: int = M
                 ) -> list[list[int]]:
     """Greedy split into groups of consecutive word indices.
 
-    A group closes when adding a word would exceed max_words/max_chars, or after sentence
-    punctuation (so cards follow the phrasing) unless that would leave a single-word card.
+    A group closes when adding a word would exceed max_words/max_chars, after sentence
+    punctuation (unless that would leave a single-word card), and after a comma/colon once
+    the card has MIN_PHRASE_WORDS words — so cards follow the phrasing, not a word count.
     """
     groups: list[list[int]] = []
     cur: list[int] = []
@@ -39,7 +43,7 @@ def chunk_words(words: list[str], max_words: int = MAX_WORDS, max_chars: int = M
             cur, chars = [], 0
         cur.append(i)
         chars += len(w) + (1 if chars else 0)
-        if w[-1] in SENTENCE_END and len(cur) >= 2:
+        if (w[-1] in SENTENCE_END and len(cur) >= 2) or (w[-1] in PHRASE_END and len(cur) >= MIN_PHRASE_WORDS):
             groups.append(cur)
             cur, chars = [], 0
     if cur:

@@ -37,6 +37,8 @@ def repo_root(start: Path | None = None) -> Path:
 
 
 def audio_root() -> Path:
+    from dsanim.env import load_dotenv
+    load_dotenv()
     env = os.environ.get("DSANIM_AUDIO_DIR")
     return Path(env).expanduser() if env else repo_root() / "assets" / "audio"
 
@@ -57,6 +59,11 @@ class BeatAudio:
     word_times: list[dict] | None
 
     @property
+    def aligned(self) -> bool:
+        """Word timings exist and match the script's word count one-to-one."""
+        return bool(self.word_times) and len(self.word_times) == len(self.beat.words)
+
+    @property
     def kind(self) -> str:
         return "recorded" if self.path and not self.placeholder else (
             "placeholder" if self.path else "silent-estimate")
@@ -67,7 +74,7 @@ class BeatAudio:
         if name not in marks:
             raise KeyError(f"beat {self.beat.id} has no mark [[{name}]]; has {list(marks)}")
         idx, n = marks[name], max(len(self.beat.words), 1)
-        if self.word_times and len(self.word_times) == len(self.beat.words):
+        if self.aligned:
             return self.word_times[idx]["start"] if idx < n else self.duration
         return self.duration * idx / n
 

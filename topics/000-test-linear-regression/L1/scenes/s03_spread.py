@@ -36,8 +36,8 @@ class Scene03(DSScene):
             y0 = st.line_y(BAND_X)
             left_x = BAND_X - HALF_WIDTH - 30
             bracket = BraceBetweenPoints(axes.c2p(left_x, y0 - st.sigma), axes.c2p(left_x, y0 + st.sigma),
-                                         direction=LEFT, color=P.CONCEPT)
-            sigma_label = T.symbol("sigma", color=P.CONCEPT).next_to(bracket, LEFT, 0.1)
+                                         direction=LEFT, color=P.MODEL)   # OLS's σ belongs to the line
+            sigma_label = T.symbol("sigma", color=P.MODEL).next_to(bracket, LEFT, 0.1)
             self.play(FadeIn(bracket), FadeIn(sigma_label), run_time=P.ENTRANCE_TIME)
             eq_noise = st.place_eq(self.eq("noise", terms=NOISE_TERMS, roles=roles_for(NOISE_TERMS)))
             self.play(morph(eq_cond, eq_noise), run_time=P.RUN_TIME)
@@ -45,5 +45,5 @@ class Scene03(DSScene):
         # --- Beat 3.3 — not an error ------------------------------------------------------------
         with self.beat("3.3", extend=1.0) as b:
             self.play(FadeOut(sticks), run_time=P.ENTRANCE_TIME)
-            self.play(Indicate(VGroup(bracket, sigma_label), color=P.CONCEPT, scale_factor=1.1),
+            self.play(Indicate(VGroup(bracket, sigma_label), color=P.MODEL, scale_factor=1.1),
                       run_time=P.RUN_TIME)

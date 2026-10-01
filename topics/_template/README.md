@@ -14,3 +14,9 @@ its own script, shot list, scenes and renders.
 ## Shared decisions across tiers
 - dataset(s):
 - notation (keep identical across tiers):
+
+## Decisions
+<!-- The agent writes its question here BEFORE asking; Nitish's answer and the date go next to it. -->
+| Question | Answer | Date |
+|---|---|---|
+| | | |

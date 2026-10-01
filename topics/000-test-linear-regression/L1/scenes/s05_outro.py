@@ -2,7 +2,7 @@
 
 from manim import DOWN, LEFT, FadeIn, FadeOut, VGroup
 
-from common.stage import BAND_Y, GEN_TERMS, HALF_WIDTH, SWEEP, build_stage, roles_for
+from common.stage import BAND_Y, GEN_TERMS, HALF_WIDTH, PARK_X, build_stage, roles_for
 from dsanim import palette as P, typography as T
 from dsanim.components.conditional import SIGMA_FLOOR, band
 from dsanim.components.gaussian import GaussianSlice
@@ -19,7 +19,7 @@ class Scene05(DSScene):
     def construct(self):
         st = build_stage(self)
         axes, scatter = st.axes, st.scatter
-        x_end = SWEEP[1]
+        x_end = PARK_X                                        # where Scene 4 parked the band
         line = st.line()
         the_band = band(axes, x_end, HALF_WIDTH, y_span=BAND_Y)
         scatter.focus_band(x_end, HALF_WIDTH)

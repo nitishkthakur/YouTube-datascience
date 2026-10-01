@@ -9,7 +9,9 @@ Writes  renders/<topic>_<tier>_<q>[_v].mp4
         publish/manifest_<q>[_v].json what went in: scenes, beats, audio hashes, tool versions, git commit
 
 Audio is normalised (AAC 48 kHz stereo; silence added to scenes without narration) so the
-concat is a lossless stream copy of the video. Scene order = scene number in the file name.
+concat is a lossless stream copy of the video; a final pass then normalises loudness to
+-14 LUFS (two-pass loudnorm) and tags BT.709 colour; -q h/-q k re-encode at crf 18.
+Scene order = scene number in the file name.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ from dsanim import captions
 from dsanim.script import parse
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))   # sibling tools importable (render_all)
 
 
 def has_audio(video: Path) -> bool:
@@ -36,20 +39,51 @@ def has_audio(video: Path) -> bool:
 
 
 def normalise(video: Path, dest: Path) -> Path:
-    """Copy the video stream; transcode (or synthesise) audio to AAC 48 kHz stereo."""
+    """Copy the video stream; decode (or synthesise) audio to PCM 48 kHz stereo in a .mov.
+
+    PCM intermediates concatenate without AAC priming gaps at every seam; AAC is encoded once,
+    in finalize()."""
+    dest = dest.with_suffix(".mov")
     dest.parent.mkdir(parents=True, exist_ok=True)
     if has_audio(video):
         cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(video),
-               "-c:v", "copy", "-c:a", "aac", "-ar", "48000", "-ac", "2", str(dest)]
+               "-c:v", "copy", "-c:a", "pcm_s16le", "-ar", "48000", "-ac", "2", str(dest)]
     else:
         cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(video),
                "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
-               "-c:v", "copy", "-c:a", "aac", "-shortest", str(dest)]
+               "-c:v", "copy", "-c:a", "pcm_s16le", "-shortest", str(dest)]
     subprocess.run(cmd, check=True)
     return dest
 
 
+def video_params(video: Path) -> str:
+    """codec/profile/level/size/fps/pix_fmt — must match for a stream-copy concat to be valid."""
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v", "-show_entries",
+                          "stream=codec_name,profile,level,width,height,r_frame_rate,pix_fmt",
+                          "-of", "csv=p=0", str(video)], capture_output=True, text=True, check=True)
+    return out.stdout.strip()
+
+
+def check_provenance(tier: Path, scenes: list[dict], quality: str, vertical: bool) -> list[str]:
+    """Renders whose inputs changed since they were made (scene file, common/, script, dsanim,
+    audio). Assembling them would mix old and new."""
+    from render_all import inputs_hash  # tools/ is on sys.path when run as a script
+
+    stale = []
+    for s in scenes:
+        stamp = Path(s["mp4"]).with_suffix(".inputs.sha")
+        entry = {"file": s["file"], "scene_number": s.get("scene_number"), "class": s["class"]}
+        if not stamp.exists() or stamp.read_text().strip() != inputs_hash(entry, tier, quality, vertical):
+            stale.append(s["class"])
+    return stale
+
+
 def concat(parts: list[Path], dest: Path) -> Path:
+    params = {video_params(p) for p in parts}
+    if len(params) > 1:
+        raise SystemExit(f"cannot stream-copy concat: video parameters differ between scenes: {params} "
+                         "— re-render the tier with one Manim/ffmpeg version")
+    dest = dest.with_suffix(".mov")
     listing = dest.with_suffix(".concat.txt")
     listing.write_text("".join(f"file '{p.resolve()}'\n" for p in parts))
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0",
@@ -90,6 +124,48 @@ def seam_report(parts: list[Path], work: Path, threshold: float = 0.02) -> list[
     return out
 
 
+LOUDNORM = "I=-14:TP=-1:LRA=11"   # YouTube / Instagram normalise to about -14 LUFS and only attenuate
+BT709 = ["-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv"]
+BT709_BSF = "h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1:video_full_range_flag=0"
+
+
+def measure_loudness(video: Path) -> dict:
+    """First loudnorm pass: measured integrated loudness, true peak, LRA, threshold."""
+    r = subprocess.run(["ffmpeg", "-v", "info", "-i", str(video), "-af", f"loudnorm={LOUDNORM}:print_format=json",
+                        "-f", "null", "-"], capture_output=True, text=True)
+    text = r.stderr
+    start = text.rfind("{")
+    return json.loads(text[start:text.rfind("}") + 1]) if start >= 0 else {}
+
+
+def finalize(src: Path, dest: Path, reencode: bool, crf: int = 18) -> dict:
+    """Second loudnorm pass (linear, to the measured values) + BT.709 colour tags; finals
+    re-encode the video at crf 18 so dark gradients survive the platform's re-encode."""
+    if not has_audio(src):
+        src = normalise(src, src.with_suffix(".silent.mp4"))   # platforms expect an audio track
+    m = measure_loudness(src)
+    silent = not m or float(m.get("input_i", "-inf")) < -60   # digital silence: nothing to normalise
+    audio = ["-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2"]
+    if not silent:
+        audio = ["-af", (f"loudnorm={LOUDNORM}:measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
+                         f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:"
+                         f"offset={m['target_offset']}:linear=true"), *audio]
+    video = (["-c:v", "libx264", "-crf", str(crf), "-preset", "medium", "-pix_fmt", "yuv420p", *BT709]
+             if reencode else ["-c:v", "copy", "-bsf:v", BT709_BSF])
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), *video, *audio,
+                    "-movflags", "+faststart", str(dest)], check=True)
+    after = measure_loudness(dest) if not silent else {}
+
+    def lufs(d):
+        try:
+            v = float(d["input_i"])
+            return None if v == float("-inf") else v
+        except (KeyError, ValueError, TypeError):
+            return None
+
+    return {"input_lufs": lufs(m), "output_lufs": lufs(after), "reencoded": reencode, "silent": silent}
+
+
 def chapter_stamp(t: float) -> str:
     t = int(round(t))
     h, rest = divmod(t, 3600)
@@ -125,7 +201,8 @@ def environment() -> dict:
 
 
 def write_manifest(path: Path, script, scenes: list[dict], parts: list[Path], durations: list[float],
-                   offsets: list[float], output: Path, quality: str, vertical: bool) -> Path:
+                   offsets: list[float], output: Path, quality: str, vertical: bool,
+                   seams: list[dict] | None = None, loudness: dict | None = None) -> Path:
     beats = []
     for entry, offset in zip(scenes, offsets):
         if entry.get("beats_json") and Path(entry["beats_json"]).exists():
@@ -143,6 +220,9 @@ def write_manifest(path: Path, script, scenes: list[dict], parts: list[Path], du
                    for e, d, o in zip(scenes, durations, offsets)],
         "beats": beats,
         "placeholder_audio": any(b["audio"] == "placeholder" for b in beats),
+        "seams": seams or [],
+        "loudness": loudness or {},
+        "video_params": video_params(output) if output.exists() else None,
         "environment": environment(),
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -155,6 +235,7 @@ def main(argv: list[str] | None = None) -> Path:
     ap.add_argument("tier", type=Path)
     ap.add_argument("-q", "--quality", default="h", choices=list("lmhk"))
     ap.add_argument("--vertical", action="store_true")
+    ap.add_argument("--allow-stale", action="store_true", help="assemble even if some renders predate their inputs")
     args = ap.parse_args(argv)
 
     tier = args.tier.resolve()
@@ -164,14 +245,23 @@ def main(argv: list[str] | None = None) -> Path:
         raise SystemExit(f"{manifest} missing — run tools/render_all.py first")
     scenes = json.loads(manifest.read_text())["scenes"]
     script = parse(tier / "script.md")
+    stale = check_provenance(tier, scenes, args.quality, args.vertical)
+    if stale and not args.allow_stale:
+        raise SystemExit(f"stale renders (inputs changed since): {stale} — "
+                         f"run tools/render_all.py {tier} -q {args.quality} first, or --allow-stale")
 
     work = tier / "renders" / ".concat"
-    parts = [normalise(Path(s["mp4"]), work / f"{Path(s['mp4']).stem}.norm.mp4") for s in scenes]
+    parts = [normalise(Path(s["mp4"]), work / f"{Path(s['mp4']).stem}.norm") for s in scenes]
     durations = [duration(p) for p in parts]
     offsets = [sum(durations[:i]) for i in range(len(durations))]
 
     name = f"{script.meta.get('topic', tier.parent.name)}_{script.meta.get('tier', tier.name)}_{tag}"
-    out = concat(parts, tier / "renders" / f"{name}.mp4")
+    joined = concat(parts, work / f"{name}.concat.mp4")
+    out = tier / "renders" / f"{name}.mp4"
+    loudness = finalize(joined, out, reencode=args.quality in "hk")
+    fmt = lambda v: "silent" if v is None else f"{v:.1f} LUFS"
+    print(f"loudness {fmt(loudness['input_lufs'])} -> {fmt(loudness['output_lufs'])}"
+          f"{' (re-encoded crf 18, bt709)' if loudness['reencoded'] else ' (video copied, bt709 tagged)'}")
 
     seams = seam_report(parts, work)
     for s in seams:
@@ -183,11 +273,8 @@ def main(argv: list[str] | None = None) -> Path:
     suffix = "_v" if args.vertical else ""
     (publish / f"chapters{suffix}.txt").write_text("\n".join(chapters) + "\n")
     captions.write_srt(subs, publish / f"subtitles{suffix}.srt")
-    manifest = write_manifest(publish / f"manifest_{tag}.json", script, scenes, parts, durations,
-                              offsets, out, args.quality, args.vertical)
-    data = json.loads(manifest.read_text())
-    data["seams"] = seams
-    manifest.write_text(json.dumps(data, indent=1))
+    write_manifest(publish / f"manifest_{tag}.json", script, scenes, parts, durations,
+                   offsets, out, args.quality, args.vertical, seams=seams, loudness=loudness)
 
     total = sum(durations)
     print(f"assembled {out}  ({total:.1f}s, {len(scenes)} scenes)")

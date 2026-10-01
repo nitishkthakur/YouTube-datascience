@@ -49,7 +49,7 @@ def test_until_returns_time_to_mark_and_records_it(beat):
     t = BeatTracker(s, audio_for(beat))
     dt = t.until("go")                     # mark at word 3 of 6 -> 2.0 s
     assert dt == pytest.approx(frames(2.0))
-    assert t.marks_hit["go"] == pytest.approx(dt)
+    assert t.marks_hit["go"]["hit"] == pytest.approx(dt) and not t.marks_hit["go"]["late"]
 
 
 def test_until_warns_and_floors_when_past_the_mark(beat):
@@ -58,6 +58,7 @@ def test_until_warns_and_floors_when_past_the_mark(beat):
     s.wait(3.0)
     with pytest.warns(UserWarning, match="past"):
         assert t.until("go") == pytest.approx(frames(0.1))
+    assert t.marks_hit["go"]["late"]
 
 
 def test_wait_until_advances_the_clock_and_warns_when_late(beat):
@@ -65,7 +66,7 @@ def test_wait_until_advances_the_clock_and_warns_when_late(beat):
     t = BeatTracker(s, audio_for(beat))
     t.wait_until("go")
     assert s.renderer.time == pytest.approx(frames(2.0))
-    assert t.marks_hit["go"] == pytest.approx(frames(2.0))
+    assert t.marks_hit["go"] == {"hit": pytest.approx(frames(2.0)), "late": False}
     s.wait(1.0)
     with pytest.warns(UserWarning, match="late"):
         t.wait_until("go")

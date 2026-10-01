@@ -13,6 +13,28 @@ Running log for the next session (human or agent). Newest first.
 
 ## Log
 
+### 2026-10-01 (later) — Round-2 review fixes (agent)
+Reviewed at 720p after these changes (renders/): Scene01_m.sheet.png, Scene02_m.sheet.png,
+Scene03_m.sheet.png, Scene04_m.sheet.png (band parks at 1300 kg; both bells legible; OLS σ
+violet), Scene05_m.sheet.png; shorts/what-the-line-leaves-out_h.sheet.png (captions, ledger,
+watermark in the gutter). Seams: all continuous (≤0.3% pixels change).
+Code review found a blocker before any real recording: with Manim's partial-movie cache warm, a
+cached play skips `add_sound`, so a re-render of an unchanged scene shipped **without
+narration** (and advanced time by the unquantised duration). Fix: caching is now off for every
+render (`config.disable_caching` + `--disable_caching`); incremental work is per scene
+(`render_all` keeps scenes whose inputs hash is unchanged) and `tests/regression/
+test_render_twice.py` renders twice into one media dir and checks audio + identical timings.
+Also from the reviews: finals refuse missing narration and stale recordings (`audio_manifest`),
+assemble/make_shorts refuse renders whose inputs changed (`.inputs.sha`), PCM intermediates with
+one AAC encode (no priming gaps at seams), two-pass loudness to −14 LUFS + BT.709 tags + crf 18
+at h/k (the h master measured −25.5 LUFS before), `-t` cuts, `late` flag on marks, stroke-aware
+safe-area boxes, render logs per scene, shot-list approval bound to a content hash
+(`tools/approve.py`), `title:` in the description, `.env` for the audio root, phrase-boundary
+two-line captions, watermark in the gutter. Design: OLS σ is violet everywhere (the line's one
+constant width), the band parks at 1300 kg under "so does its spread" so both bells stay
+legible, equations fill the panel (≤1.3×), dots 6 px. The stage builder moved into
+`dsanim.components.chart`; `common/stage.py` keeps only this tier's constants.
+
 ### 2026-10-01 — Built end to end (agent)
 What the build exposed, in the order found — each fixed and pinned with a test:
 - **Parallel renders raced on Manim's text/TeX cache** (`.media/texts/<hash>_.svg` unlinked by
@@ -40,7 +62,10 @@ Equation panel: the long `noise` equation scales to ~0.7 to fit the 40% panel (�
 1080p — above the 28 floor, but the smallest text in the video).
 
 ### Open
-- Marks in *recorded* audio still interpolate by word position until `tools/align.py` exists.
+- Marks in *recorded* audio still interpolate by word position until `tools/align.py` exists —
+  **build it before the first real recording** (both reviews: this bites first).
+- Hook card for Shorts (1.5 s from `hook:`), end card held 8–10 s with an end-screen region,
+  a CC0 music bed with ducking, `tools/thumbnail.py`, a channel mark.
 - Only 16:9 and 9:16; Instagram feed 4:5 needs `layout.apply_orientation(aspect)` generalised.
 - No music bed / ducking, no intro/outro stingers, no thumbnail tool yet.
 - The `noise` equation would read better on two lines in the panel.

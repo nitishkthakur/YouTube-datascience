@@ -3,6 +3,23 @@
 Short records of project-level decisions and why, newest first. Topic-specific decisions go
 in that topic's NOTES.md. When a decision changes AGENTS.md, note it here too.
 
+## 2026-10-01 (later) — Round-2 reviews applied
+- **Manim play cache is off everywhere.** A cached play skips code, updaters and `add_sound`
+  (narration silently dropped on re-renders) and advances time by the unquantised duration.
+  Incremental renders are per scene via an inputs hash (`renders/<render>.inputs.sha`);
+  assemble/make_shorts refuse renders whose inputs changed since.
+- **Inputs are bound to versions**: shot-list approval = `Status: approved <content hash>`
+  (`tools/approve.py`); recordings registered with the beat text they were recorded from
+  (`tools/audio_manifest.py`, `<tier>/audio_manifest.json` committed); stale recordings and
+  missing narration fail final renders.
+- **Publishing pass in assemble**: PCM intermediates, one AAC encode, two-pass loudnorm to
+  −14 LUFS, BT.709 tags, crf 18 at h/k, `+faststart`. Shorts get the same pass.
+- **Chart stage promoted to `dsanim.components.chart`** (ChartSpec, build_chart,
+  equation_panel, place_equation, peak_room); tiers keep constants only.
+- **Review bar, per beat**: "does something change on screen for each clause?" and full-frame
+  reads of every beat's end frame (a contact-sheet tile is too small to judge).
+- Machine-local settings in `<repo>/.env` (`dsanim.env.load_dotenv`), not the shell profile.
+
 ## 2026-10-01 — Pipeline layer and the test video
 - **Assembly layer built** (the structure review's #1 gap): every render writes a beat-timings
   sidecar; `render_all` → `assemble` (audio-normalised concat, chapters, SRT, publish manifest

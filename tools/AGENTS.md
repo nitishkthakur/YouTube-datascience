@@ -17,6 +17,8 @@ Each has a docstring with usage; keep it accurate.
 | `make_shorts.py` | vertical chunks from `shorts/chunks.yaml` (scenes, optional beat range) → `renders/shorts/<name>_<q>.mp4` |
 | `status.py` | readiness report: what NITISH / CODE / AGENT still owe for a tier |
 | `pipeline.py` | the deterministic one-shot: status → (placeholders) → render all qualities → assemble → shorts → status |
+| `audio_manifest.py` | `register` / `verify`: bind each recorded WAV to the beat text it was recorded from (`<tier>/audio_manifest.json`) |
+| `approve.py` | approve a shot list by binding `Status: approved <hash>` to its content; `--revoke` |
 
 ## Rules
 - Every tool gets tests (`tests/unit/` for logic, `tests/smoke/` that it runs). Factor logic

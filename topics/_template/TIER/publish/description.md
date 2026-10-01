@@ -1,4 +1,6 @@
-<!-- YouTube description for {{concept}} / {{tier}}. Filled at publish time. -->
+title:
+<!-- YouTube description for {{concept}} / {{tier}}. `title:` above is the chosen title (script.md only
+     lists candidates). Fill the body at publish time; paste chapters.txt under ## Chapters. -->
 
 ## Chapters
 00:00

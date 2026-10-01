@@ -7,12 +7,13 @@ Render: uv run python tools/render.py \
     topics/030-regression-is-conditional-distribution/L1/scenes/s03_conditional.py Scene03 -q m --sheet
 """
 
-from manim import (DOWN, LEFT, RIGHT, UP, Axes, Create, Dot, FadeIn, FadeOut, TracedPath, Transform,
-                   ValueTracker, VGroup, Write, linear, smooth, there_and_back)
+from manim import (LEFT, RIGHT, UP, Create, Dot, FadeIn, FadeOut, TracedPath, Transform, ValueTracker,
+                   VGroup, Write, linear, smooth, there_and_back)
 
 from dsanim import data, palette as P, stats, typography as T
-from dsanim.components.conditional import band, conditional_fit, conditional_slice, mean_point
-from dsanim.components.equations import morph
+from dsanim.components.chart import ChartSpec, build_chart, equation_panel, place_equation
+from dsanim.components.conditional import SIGMA_FLOOR, band, conditional_fit, conditional_slice, mean_point
+from dsanim.components.equations import morph, roles_for as _roles_for
 from dsanim.components.gaussian import GaussianSlice
 from dsanim.components.ledger import Ledger
 from dsanim.components.scatter import Scatter
@@ -21,6 +22,7 @@ from dsanim.scene import DSScene
 # --- Shot-list parameters (shotlist.md, Scene 3) ---------------------------------------
 X_RANGE = (500, 2500, 500)   # kg — empty strip left of the data holds the collapsed points
 Y_RANGE = (0, 50, 10)        # mpg
+CHART = ChartSpec(X_RANGE, Y_RANGE, (1000, 1500, 2000), (10, 20, 30, 40, 50), "weight (kg)", "mpg")
 BAND_X = 1500                # kg, from the narration
 HALF_WIDTH = 75              # kg -> 150 kg band (⚑ was ≈100)
 SWEEP = (900, 2200)          # kg
@@ -36,7 +38,7 @@ ROLES = {r"\mid X=x": P.PARAM, r"\mu": P.CONCEPT, r"\mu(x)": P.CONCEPT,
 
 
 def roles_for(terms):
-    return {t: ROLES[t] for t in terms if t in ROLES}
+    return _roles_for(terms, ROLES)
 
 
 class Scene03(DSScene):
@@ -46,24 +48,14 @@ class Scene03(DSScene):
         wx, mpg = cars["weight_kg"].to_numpy(), cars["mpg"].to_numpy()
 
         # --- Persistent: axes + scatter (carried over from Scene 2) --------------------------
-        axes = Axes(x_range=X_RANGE, y_range=Y_RANGE,
-                    x_length=L.plot.width - 1.0, y_length=L.plot.height - 1.7,
-                    axis_config={"color": P.MUTED, "stroke_width": 2, "include_tip": False})
-        x_nums = VGroup(*[T.text(f"{v}", size=P.SIZE_TICK, color=P.MUTED).next_to(axes.c2p(v, 0), DOWN, 0.15)
-                          for v in (1000, 1500, 2000)])
-        y_nums = VGroup(*[T.text(f"{v}", size=P.SIZE_TICK, color=P.MUTED).next_to(axes.c2p(X_RANGE[0], v), LEFT, 0.15)
-                          for v in (10, 20, 30, 40, 50)])
-        x_title = T.label("weight (kg)", color=P.MUTED).next_to(x_nums, DOWN, 0.2)
-        x_title.align_to(axes.c2p(X_RANGE[1], 0), RIGHT)
-        y_title = T.label("mpg", color=P.MUTED).next_to(y_nums, UP, 0.25).align_to(y_nums, LEFT)
-        chart = VGroup(axes, x_nums, y_nums, x_title, y_title)
-        L.plot.fit(chart.move_to(L.plot.center))
+        chart = build_chart(L, CHART)
+        axes = chart.axes
         scatter = Scatter(axes, wx, mpg)
-        self.add(chart, scatter)
+        self.add(chart.group, scatter)
 
-        eq_region, ledger_region = L.equation.split_v([0.45, 0.55], ["eq", "ledger"], gap=0.2)
-        eq_marginal = eq_region.fit(self.eq("marginal", terms=MARG_TERMS, roles=roles_for(MARG_TERMS)), pad=0.15)
-        eq_conditional = eq_region.fit(self.eq("conditional", terms=COND_TERMS, roles=roles_for(COND_TERMS)), pad=0.15)
+        eq_region, ledger_region = equation_panel(L)
+        eq_marginal = place_equation(self.eq("marginal", terms=MARG_TERMS, roles=roles_for(MARG_TERMS)), eq_region)
+        eq_conditional = place_equation(self.eq("conditional", terms=COND_TERMS, roles=roles_for(COND_TERMS)), eq_region)
 
         # --- Beat 3.1 — ignore x: collapse onto the y-axis, fit the marginal Normal ----------
         with self.beat("3.1", extend=2.0) as b:
@@ -111,9 +103,11 @@ class Scene03(DSScene):
             the_band.add_updater(lambda m: m.become(band(axes, x.get_value(), HALF_WIDTH, y_span=BAND_Y)))
             scatter.add_updater(lambda m: m.focus_band(x.get_value(), HALF_WIDTH))
 
+            floor = SIGMA_FLOOR * (Y_RANGE[1] - Y_RANGE[0])
+
             def follow(m):
                 f = local()
-                m.set_params(x0=x.get_value(), mu=f.mean, sigma=max(f.sd, 0.02 * (Y_RANGE[1] - Y_RANGE[0])))
+                m.set_params(x0=x.get_value(), mu=f.mean, sigma=max(f.sd, floor))
 
             cond.add_updater(follow)
             ledger.live()

@@ -1,9 +1,10 @@
 """The shared stage for every scene of this tier.
 
-One builder, so every scene has the same axes, the same 398 cars, the same line and the same
-equation panel positions — nothing jumps between scenes (shot list TRANSITION rows; the seam
-check in tools/assemble.py). Scenes import it via the tier folder, which tools/render.py
-puts on PYTHONPATH: `from common.stage import build_stage`.
+Only the tier's constants live here (ranges, ticks, band, sweep, equation tokens, roles); the
+construction is dsanim.components.chart, so every scene has the same axes, cars, line and
+panel — nothing jumps between scenes (shot list TRANSITION rows; the seam check in
+tools/assemble.py). Scenes import it via the tier folder on PYTHONPATH:
+`from common.stage import build_stage`.
 """
 
 from __future__ import annotations
@@ -11,20 +12,24 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from manim import DOWN, LEFT, UP, Axes, VGroup
+from manim import Axes, VGroup
 
-from dsanim import data, palette as P, stats, typography as T
+from dsanim import data, palette as P, stats
+from dsanim.components.chart import ChartSpec, build_chart, equation_panel, peak_room, place_equation
+from dsanim.components.equations import roles_for as _roles_for
 from dsanim.components.scatter import Scatter
 from dsanim.layout import Layout, Region
 
 X_RANGE = (500, 2500, 500)    # kg
 Y_RANGE = (0, 50, 10)         # mpg
+CHART = ChartSpec(X_RANGE, Y_RANGE, (1000, 1500, 2000), (10, 20, 30, 40, 50), "weight (kg)", "mpg")
 LINE_X = (700, 2400)          # kg: draw the line only where there are cars
 BAND_X = 1500                 # kg, from the narration
 HALF_WIDTH = 75               # kg -> 150 kg band
 BAND_Y = (2, 48)              # mpg: band clear of the x-axis line and the top tick
 PEAK_MAX = 1.3                # scene units: shared peak width of every Gaussian slice (landscape)
 SWEEP = (900, 2200)           # kg
+PARK_X = 1300                 # kg: where the band rests after the sweep so both bells stay legible
 
 # Equation tokenisation for term-wise reveal/morph (must concatenate to the script's LaTeX).
 LINE_TERMS = [r"\hat{y}", "=", r"\beta_0", "+", r"\beta_1", "x"]
@@ -40,13 +45,14 @@ ROLES = {
     r"\hat{y}": P.MODEL, r"\beta_0": P.MODEL, r"\beta_1": P.MODEL,          # the line
     "x": P.PARAM, r"\mid X=x": P.PARAM,                                      # the conditioning value
     r"\mathbb{E}[Y \mid X=x]": P.CONCEPT, r"\mu(x)": P.CONCEPT,              # the conditional centre
-    r"\sigma": P.CONCEPT, r"\sigma(x)": P.CONCEPT,                           # the spread
+    r"\sigma": P.MODEL,                                                      # OLS's one constant width = the line's
+    r"\sigma(x)": P.CONCEPT,                                                 # the real, local spread
     r"\varepsilon": P.ERROR,                                                 # "noise"
 }
 
 
 def roles_for(terms: list[str]) -> dict[str, str]:
-    return {t: ROLES[t] for t in terms if t in ROLES}
+    return _roles_for(terms, ROLES)
 
 
 @dataclass
@@ -71,8 +77,7 @@ class Stage:
         return self.axes.plot(self.line_y, x_range=list(LINE_X), color=P.MODEL, stroke_width=5, **kw)
 
     def place_eq(self, eq):
-        """Centre an equation in the panel, scaled down only if it is too wide."""
-        return self.eq_region.fit(eq, pad=0.15)
+        return place_equation(eq, self.eq_region)
 
     def local_fit(self, x0: float) -> stats.NormalFit:
         return stats.local_normal(self.wx, self.mpg, x0, HALF_WIDTH)
@@ -84,23 +89,8 @@ def build_stage(scene) -> Stage:
     wx, mpg = cars["weight_kg"].to_numpy(), cars["mpg"].to_numpy()
     b1, b0 = np.polyfit(wx, mpg, 1)
     sigma = float(np.std(mpg - (b0 + b1 * wx), ddof=2))
-
-    axes = Axes(x_range=X_RANGE, y_range=Y_RANGE,
-                x_length=L.plot.width - 1.0, y_length=L.plot.height - 1.7,
-                axis_config={"color": P.MUTED, "stroke_width": 2, "include_tip": False})
-    x_nums = VGroup(*[T.text(f"{v}", size=P.SIZE_TICK, color=P.MUTED).next_to(axes.c2p(v, 0), DOWN, 0.15)
-                      for v in (1000, 1500, 2000)])
-    y_nums = VGroup(*[T.text(f"{v}", size=P.SIZE_TICK, color=P.MUTED).next_to(axes.c2p(X_RANGE[0], v), LEFT, 0.15)
-                      for v in (10, 20, 30, 40, 50)])
-    x_title = T.label("weight (kg)", color=P.MUTED).next_to(x_nums, DOWN, 0.2)
-    x_title.align_to(axes.c2p(X_RANGE[1], 0), [1, 0, 0])
-    y_title = T.label("mpg", color=P.MUTED).next_to(y_nums, UP, 0.25).align_to(y_nums, LEFT)
-    chart = VGroup(axes, x_nums, y_nums, x_title, y_title)
-    L.plot.fit(chart.move_to(L.plot.center))
-
-    eq_region, ledger_region = L.equation.split_v([0.45, 0.55], ["eq", "ledger"], gap=0.2)
-    # A right-bulging slice at the far end of the sweep must not leave the safe area (9:16 is narrow).
-    room = L.safe.right - axes.c2p(SWEEP[1] + HALF_WIDTH, 0)[0] - 0.1
-    peak = min(PEAK_MAX, room)
-    return Stage(L, axes, chart, Scatter(axes, wx, mpg), wx, mpg, float(b0), float(b1), sigma,
-                 eq_region, ledger_region, peak)
+    chart = build_chart(L, CHART)
+    eq_region, ledger_region = equation_panel(L)
+    peak = peak_room(L, chart.axes, SWEEP[1] + HALF_WIDTH, PEAK_MAX)
+    return Stage(L, chart.axes, chart.group, Scatter(chart.axes, wx, mpg), wx, mpg, float(b0), float(b1),
+                 sigma, eq_region, ledger_region, peak)

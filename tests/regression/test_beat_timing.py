@@ -100,8 +100,10 @@ def test_safe_area_violation_warns_while_iterating(tmp_path):
 
 
 def test_safe_area_violation_fails_final_render(tmp_path):
+    audio = tmp_path / "audio"
+    write_tone(audio / "fixture-topic/L1/s01_b01.wav", 1.0)   # finals also need narration
     r = run_manim(SCENE, "LeavesSafeArea", "unsafe_final", tmp_path / "media",
-                  render_env(DSANIM_AUDIO_DIR=tmp_path / "none", DSANIM_FINAL=1))
+                  render_env(DSANIM_AUDIO_DIR=audio, DSANIM_FINAL=1))
     assert r.returncode != 0 and "SafeAreaViolation" in r.stdout + r.stderr
 
 

@@ -38,8 +38,16 @@ YouTube chapters and an SRT, and cuts the vertical chunks declared in `shorts/ch
 5. `shorts/chunks.yaml` (which beats become vertical chunks), `publish/description.md`, a
    thumbnail frame.
 
+**You edit:** `script.md` · the `Status:` line of `shotlist.md` (via `tools/approve.py`) and
+comments in it · `NOTES.md` under "Nitish's notes" · `shorts/chunks.yaml` ·
+`publish/description.md` (incl. `title:`) · `publish/thumbnail.png` · the concept `README.md`
+Decisions table · recordings (then `tools/audio_manifest.py register`).
+**Never hand-edit:** `scenes/`, `common/`, `renders/`, `publish/chapters.txt`,
+`publish/subtitles.srt`, `publish/manifest_*.json`, `audio_manifest.json` — they are generated
+or agent-owned and will be overwritten.
+
 Everything else — placeholder voice, renders, contact sheets, chapters, subtitles, chunks,
-manifests — is produced by the tools. Two ways to run them are described in
+manifests, loudness and colour normalisation — is produced by the tools. Two ways to run them are described in
 [channel/pipeline.md](channel/pipeline.md): deterministic (just the tools) and agent-assisted
 (an agent reviews frames and adjusts).
 

@@ -1,3 +1,5 @@
+title: The regression line is a conditional mean — and that's the small part (TEST)
+
 TEST VIDEO — not for publication. Agent-written narration with a placeholder voice, used to
 exercise the production pipeline end to end.
 

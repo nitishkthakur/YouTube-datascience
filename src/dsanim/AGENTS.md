@@ -18,6 +18,7 @@ deliberately. Root AGENTS.md §3–§4 and §14 apply; this file adds the local 
 | `components/scatter.py` | `Scatter`: dots that remember their data; `collapsed()`, `focus_band()`, `unfocus()` | |
 | `components/conditional.py` | `band()`, `conditional_slice()`, `mean_point()` — the conditioning mechanics | |
 | `components/ledger.py` | `Ledger`: live `symbol = value unit` readouts bound to callables (`.live()` during sweeps) | |
+| `components/chart.py` | `ChartSpec` + `build_chart()` (axes, quiet ticks, titles fitted to the plot region), `equation_panel()`, `place_equation()`, `peak_room()` — the standard stage; a tier's `common/stage.py` holds only its constants | re-implement axes/ticks/panels per topic |
 | `components/equations.py` | `reveal()` terms at marks, `morph()` old→new keeping surviving terms in place | glyph-morph with TransformMatchingShapes |
 | `captions.py` | caption cards from narration + word timings (burned into vertical renders; SRT) | |
 | `env.py` | `render_env()`: subprocess environment with TeX on PATH | duplicate PATH logic in tools/tests |
@@ -29,3 +30,5 @@ deliberately. Root AGENTS.md §3–§4 and §14 apply; this file adds the local 
 - Changing `palette.py`/`layout.py`/`typography.py` or a component changes the gallery goldens: re-render the affected `gallery/` scene(s), inspect them, then regenerate goldens deliberately (`tests/regression/test_gallery_frames.py`).
 - `Create(slice.curve)` / `FadeIn(slice.fill)` add the *submobjects* to the scene; to take a `GaussianSlice` off screen remove `.curve` and `.fill` as well as the group (or animate the group as a whole).
 - ManimCE 0.21 API only. If unsure, check the installed version's source/docs; never guess from ManimGL examples.
+- The partial-movie cache is **off** (`config.disable_caching = True` in `scene.py`): a cached play skips code, updaters and `add_sound`. Never re-enable it; incremental work is per scene in `tools/render_all.py`.
+- Updaters must take `(m, dt)` if they must run during waits; never swap a container's children mid-play (toggle opacity instead); `AnimationGroup(..., group=self)` when a component animates its own parts.

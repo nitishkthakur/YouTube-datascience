@@ -53,10 +53,9 @@ def render_env(**extra) -> dict:
 
 def run_manim(scene_file: Path, scene: str, out_name: str, media: Path, env: dict,
               quality: str = "l") -> subprocess.CompletedProcess:
-    cmd = [sys.executable, "-m", "manim", "render", f"-q{quality}", "--media_dir", str(media),
-           "-o", out_name, str(scene_file), scene]
-    tier = Path(scene_file).resolve().parent.parent
-    env = {**env, "PYTHONPATH": f"{tier}:{tier.parent}:{env.get('PYTHONPATH', '')}"}
+    cmd = [sys.executable, "-m", "manim", "render", f"-q{quality}", "--disable_caching",
+           "--media_dir", str(media), "-o", out_name, str(scene_file), scene]
+    env = dsenv.scene_env(scene_file, **{k: v for k, v in env.items() if k.startswith("DSANIM_")})
     return subprocess.run(cmd, env=env, cwd=ROOT, capture_output=True, text=True)
 
 

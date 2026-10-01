@@ -48,3 +48,7 @@ def test_pipeline_fixture_tier(tmp_path, monkeypatch):
     b12 = next(b for b in beats if b["id"] == "1.2")
     assert video_duration(short) == pytest.approx(b12["end"] - b12["start"], abs=0.3)
     assert "next" in r.stdout and "narration recorded" in r.stdout
+    manifest_pub = json.loads((publish / "manifest_l.json").read_text())
+    out_lufs = manifest_pub["loudness"]["output_lufs"]
+    assert out_lufs is None or out_lufs == pytest.approx(-14.0, abs=2.5)   # one 1.5 s tone in 12 s
+    assert len(manifest_pub["seams"]) == 1

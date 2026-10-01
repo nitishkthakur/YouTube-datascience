@@ -17,6 +17,11 @@ from manim import AnimationGroup, MathTex, TransformMatchingTex, VGroup
 from dsanim import palette as P
 
 
+def roles_for(terms: list[str], roles: dict[str, str]) -> dict[str, str]:
+    """The subset of a tier's role map that applies to one equation's terms."""
+    return {t: roles[t] for t in terms if t in roles}
+
+
 def parts(eq: MathTex, terms: list[str]) -> list[VGroup]:
     found = []
     for t in terms:

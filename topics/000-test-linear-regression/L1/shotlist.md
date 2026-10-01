@@ -5,7 +5,7 @@ it). Narration is quoted from script.md. `extend` = silent visual time past the 
 Colour roles: DATA grey, PARAM amber (the chosen weight), MODEL violet (the line),
 CONCEPT teal (the conditional centre / spread), ERROR coral (residuals).
 
-Status: approved
+Status: approved 52f98c71
 
 Persistent across ALL scenes (common/stage.py): axes weight 500–2500 kg × mpg 0–50, 398 cars
 (DATA), equation panel right (upper: equation; lower: live ledger). Scene N's end state is
@@ -111,13 +111,15 @@ FOCUS: two bells — the rigid one and the real one
 - at [[sweep]]: a second slice, the LOCAL fit (CONCEPT, bulging left), appears in the same band
 - band slides 1500 → 900 (1.5 s) then 900 → 2200 (5.5 s); both slices follow; ledger: x, σ (constant 4.3), σ(x) (local, changing), n
 STATE: band at 2200, both slices, ledger
-TRANSITION: hold
+TRANSITION: the band slides back to 1300 during 4.3
 
 ### Beat 4.3 (speech ~10s · extend 1.5s)
 NARRATION: "So the honest statement is this. [[general]] Given x, y has a distribution. Its centre moves with x, and so does its spread. The line was only ever the centre."
 FOCUS: the equation
-- at [[general]]: equation morphs `ols` → `general` (β₀ + β₁ x → μ(x); σ → σ(x)); the local slice pulses; on "only ever the centre" the line pulses
-STATE: everything of 4.2 + eq general
+- at [[general]]: equation morphs `ols` → `general` (β₀ + β₁ x → μ(x); σ → σ(x)); then the band
+  slides back to 1300 kg (2.5 s) so both bells are legible and the teal one visibly widens on
+  "so does its spread"; the local slice pulses; on "only ever the centre" the line pulses
+STATE: band at 1300, both slices, ledger, eq general
 TRANSITION: Scene 5 fades the plot to the background
 
 ## Scene 5 — "Regression, restated" (~24s)

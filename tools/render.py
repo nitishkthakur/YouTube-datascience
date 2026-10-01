@@ -29,7 +29,7 @@ import sys
 import time
 from pathlib import Path
 
-from dsanim.env import render_env
+from dsanim.env import scene_env
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -53,24 +53,22 @@ def main(argv: list[str] | None = None) -> Path:
     ap.add_argument("--every", type=float, default=2.0, help="contact sheet interval (s)")
     args = ap.parse_args(argv)
 
-    env = render_env(
+    env = scene_env(
+        args.scene_file,
         DSANIM_VERTICAL=int(args.vertical),
         DSANIM_FINAL=int(args.quality in "hk"),
         DSANIM_ALLOW_PLACEHOLDER=int(args.allow_placeholder),
     )
-    # the tier folder (parent of scenes/) is importable: `from common.stage import build_stage`
-    tier_dir = renders_dir(args.scene_file).parent
-    extra = f"{tier_dir}:{tier_dir.parent}"
-    env["PYTHONPATH"] = f"{extra}:{env['PYTHONPATH']}" if env.get("PYTHONPATH") else extra
 
     suffix = f"{args.scene_class}_{args.quality}{'_v' if args.vertical else ''}"
     out_dir = renders_dir(args.scene_file)
     # One media dir per render: parallel renders (render_all --jobs) must not share Manim's
     # text/TeX caches, which write and unlink temp files by content hash and race.
     media = out_dir / ".media" / suffix
-    cmd = [sys.executable, "-m", "manim", "render", f"-q{args.quality}",
-           "--media_dir", str(media), "-o", suffix,
-           str(args.scene_file), args.scene_class]
+    # --disable_caching always (dsanim.scene sets it too): cached plays skip code, updaters and
+    # add_sound. Incremental work happens per scene in render_all.py, not per play.
+    cmd = [sys.executable, "-m", "manim", "render", f"-q{args.quality}", "--disable_caching",
+           "--media_dir", str(media), "-o", suffix, str(args.scene_file), args.scene_class]
     print("+", " ".join(cmd), flush=True)
     t0 = time.time()
     subprocess.run(cmd, env=env, check=True, cwd=ROOT)
