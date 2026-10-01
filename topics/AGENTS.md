@@ -13,10 +13,21 @@ Create with `uv run python tools/new_topic.py <NNN-slug> <L1|L2|L3>`; add the co
    `self.eq("<id>")`; colours via `P.<ROLE>`; positions via `self.layout`.
 4. Review loop at `-qm` with an inspected contact sheet (skill `render-review`).
 5. Narration: placeholder → recorded (skill `narration`).
-6. `NOTES.md` — append what you decided, what broke, render times. Newest first.
+6. `NOTES.md` — append what you decided, what broke, render times. Newest first. Nitish's watch
+   notes go under "## Nitish's notes"; read them before re-rendering.
+7. Produce: skill `produce` (tools/pipeline.py) — renders every quality, assembles, cuts Shorts,
+   and prints what Nitish still owes.
 
 ## Rules
-- Scene code imports only `manim` and `dsanim`. Anything reusable goes to `src/dsanim/`.
+- Scene code imports only `manim`, `dsanim` and the tier's `common/` (put on PYTHONPATH by
+  tools/render.py). `common/stage.py` builds what every scene shares — axes, data, line, equation
+  tokens — so scene N's end state is scene N+1's first frame. Anything reusable across topics
+  goes to `src/dsanim/`.
+- Equations: `self.eq("<id>", terms=[...], roles={...})` — `terms` must concatenate to the
+  script's LaTeX (checked at runtime); morph with `components.equations.morph`, reveal terms with
+  `hide`/`reveal`. Live numbers: `components.ledger.Ledger`. Gaussian slices appear with
+  `slice.appear()` (never `Create(slice.curve)` — the slice would not be in the scene and its
+  updaters would never run).
 - Lint (runs automatically as a hook): no inline LaTeX (E3), no Manim colour constants (E4),
   no hex colours (E2), no ManimGL (E1); fixed `self.wait(n)` warns (W1).
 - Both tiers of a concept share notation and datasets; record them in the concept README.

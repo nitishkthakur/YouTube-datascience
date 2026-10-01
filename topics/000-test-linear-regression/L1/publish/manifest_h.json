@@ -1,0 +1,229 @@
+{
+ "topic": "000-test-linear-regression",
+ "tier": "L1",
+ "script_status": "draft",
+ "quality": "h",
+ "vertical": false,
+ "output": "/Users/nitish/Documents/Github/YouTube-datascience/topics/000-test-linear-regression/L1/renders/000-test-linear-regression_L1_h.mp4",
+ "duration": 118.44999999999999,
+ "scenes": [
+  {
+   "class": "Scene01",
+   "file": "/Users/nitish/Documents/Github/YouTube-datascience/topics/000-test-linear-regression/L1/scenes/s01_line.py",
+   "duration": 20.25,
+   "offset": 0
+  },
+  {
+   "class": "Scene02",
+   "file": "/Users/nitish/Documents/Github/YouTube-datascience/topics/000-test-linear-regression/L1/scenes/s02_conditional_mean.py",
+   "duration": 24.65,
+   "offset": 20.25
+  },
+  {
+   "class": "Scene03",
+   "file": "/Users/nitish/Documents/Github/YouTube-datascience/topics/000-test-linear-regression/L1/scenes/s03_spread.py",
+   "duration": 21.4,
+   "offset": 44.9
+  },
+  {
+   "class": "Scene04",
+   "file": "/Users/nitish/Documents/Github/YouTube-datascience/topics/000-test-linear-regression/L1/scenes/s04_distribution.py",
+   "duration": 31.616667,
+   "offset": 66.3
+  },
+  {
+   "class": "Scene05",
+   "file": "/Users/nitish/Documents/Github/YouTube-datascience/topics/000-test-linear-regression/L1/scenes/s05_outro.py",
+   "duration": 20.533333,
+   "offset": 97.91666699999999
+  }
+ ],
+ "beats": [
+  {
+   "scene": "Scene01",
+   "id": "1.1",
+   "key": "s01_b01",
+   "start": 0.0,
+   "end": 7.133333333333329,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s01_b01.wav",
+   "audio_sha256": "c9a61435fdd5dfffb307646bdda2322ebc1e5038dd2c20531b9f6cce9c00f49e"
+  },
+  {
+   "scene": "Scene01",
+   "id": "1.2",
+   "key": "s01_b02",
+   "start": 7.133333333333329,
+   "end": 14.066666666666771,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s01_b02.wav",
+   "audio_sha256": "10abd68481415b34e11503bbe8bc16419a51c3aefa6805a55e998821932b057c"
+  },
+  {
+   "scene": "Scene01",
+   "id": "1.3",
+   "key": "s01_b03",
+   "start": 14.066666666666771,
+   "end": 20.250000000000156,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s01_b03.wav",
+   "audio_sha256": "935dafb481dc0848912f8db4f04800cd688711565336dd21cb265a7c515965fb"
+  },
+  {
+   "scene": "Scene02",
+   "id": "2.1",
+   "key": "s02_b01",
+   "start": 20.25,
+   "end": 25.799999999999994,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s02_b01.wav",
+   "audio_sha256": "5d1d7b7f2570a4e109f5edb5524c0d993201efd4d573bbf30819d599d9786e72"
+  },
+  {
+   "scene": "Scene02",
+   "id": "2.2",
+   "key": "s02_b02",
+   "start": 25.799999999999994,
+   "end": 32.733333333333434,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s02_b02.wav",
+   "audio_sha256": "dd10f6935add1a61c268e757358efb9fbd38e8c4292edc1ea33d548d0da31714"
+  },
+  {
+   "scene": "Scene02",
+   "id": "2.3",
+   "key": "s02_b03",
+   "start": 32.733333333333434,
+   "end": 41.76666666666664,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s02_b03.wav",
+   "audio_sha256": "e269d43b6585e5f3c7bab7a1a09054c6b212fccf82fcdc0e50e1e268fd620c83"
+  },
+  {
+   "scene": "Scene02",
+   "id": "2.4",
+   "key": "s02_b04",
+   "start": 41.76666666666664,
+   "end": 44.899999999999864,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s02_b04.wav",
+   "audio_sha256": "5fd15c8edb0217d8910786642d785b704683e9eae5b82403330df6a134dc081d"
+  },
+  {
+   "scene": "Scene03",
+   "id": "3.1",
+   "key": "s03_b01",
+   "start": 44.9,
+   "end": 53.39999999999999,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s03_b01.wav",
+   "audio_sha256": "b805a83a5f68108ac4268a5cbd667173a0c7c4d66666184ab0935528408e9afe"
+  },
+  {
+   "scene": "Scene03",
+   "id": "3.2",
+   "key": "s03_b02",
+   "start": 53.39999999999999,
+   "end": 59.60000000000009,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s03_b02.wav",
+   "audio_sha256": "4b8c636c9cbabb26ab7abfbe48ccc374856159da92c60b147b44cc4b523dc1bf"
+  },
+  {
+   "scene": "Scene03",
+   "id": "3.3",
+   "key": "s03_b03",
+   "start": 59.60000000000009,
+   "end": 66.30000000000013,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s03_b03.wav",
+   "audio_sha256": "5241f2c81cd42183dbbd397d843524e86970fb45fffa3ea53b29949ff895bc0b"
+  },
+  {
+   "scene": "Scene04",
+   "id": "4.1",
+   "key": "s04_b01",
+   "start": 66.3,
+   "end": 74.58333333333333,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s04_b01.wav",
+   "audio_sha256": "d0b403c59b12e687caa03d39940699c741b83f8ac44b51fcf51ef6320dd0dc3e"
+  },
+  {
+   "scene": "Scene04",
+   "id": "4.2",
+   "key": "s04_b02",
+   "start": 74.58333333333333,
+   "end": 87.28333333333325,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s04_b02.wav",
+   "audio_sha256": "45e37267b53731a15e3d8a1fb3e79c355a28509b96a1c92bc2f97e5c7fcf4452"
+  },
+  {
+   "scene": "Scene04",
+   "id": "4.3",
+   "key": "s04_b03",
+   "start": 87.28333333333325,
+   "end": 97.9166666666664,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s04_b03.wav",
+   "audio_sha256": "b5014fdc21c696901ad688d27a76a8f6d77fe0214c7cb1e1cdeed29f8109c93d"
+  },
+  {
+   "scene": "Scene05",
+   "id": "5.1",
+   "key": "s05_b01",
+   "start": 97.91666699999999,
+   "end": 112.25000033333332,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s05_b01.wav",
+   "audio_sha256": "ce79e9e143a3941856cf1ba251ebab34aede9c487d21a13425b831636a20301b"
+  },
+  {
+   "scene": "Scene05",
+   "id": "5.2",
+   "key": "s05_b02",
+   "start": 112.25000033333332,
+   "end": 118.45000033333335,
+   "audio": "placeholder",
+   "audio_file": "/Users/nitish/Documents/Github/YouTube-datascience/assets/audio/000-test-linear-regression/L1/placeholder/s05_b02.wav",
+   "audio_sha256": "3750c17bd9e4065b69d4c7ec5675af0e32cc95cd45253a87131132d7e6c4c71a"
+  }
+ ],
+ "placeholder_audio": true,
+ "environment": {
+  "python": "3.12.14",
+  "manim": "0.21.0",
+  "ffmpeg": "ffmpeg version 8.1.1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "git_commit": "280096258237c342f52447ae34ff26886420c44e",
+  "git_dirty": true,
+  "rendered_at": "2026-10-01T04:01:15+00:00"
+ },
+ "seams": [
+  {
+   "from": "Scene01_h",
+   "to": "Scene02_h",
+   "changed_fraction": 0.0001,
+   "hard_cut": false
+  },
+  {
+   "from": "Scene02_h",
+   "to": "Scene03_h",
+   "changed_fraction": 0.0001,
+   "hard_cut": false
+  },
+  {
+   "from": "Scene03_h",
+   "to": "Scene04_h",
+   "changed_fraction": 0.0002,
+   "hard_cut": false
+  },
+  {
+   "from": "Scene04_h",
+   "to": "Scene05_h",
+   "changed_fraction": 0.0032,
+   "hard_cut": false
+  }
+ ]
+}

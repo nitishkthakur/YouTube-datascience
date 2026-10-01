@@ -1,0 +1,5 @@
+0:00 A line through the cloud
+0:20 The line is a conditional mean
+0:45 What the line leaves out
+1:06 You were predicting a distribution all along
+1:38 Regression, restated

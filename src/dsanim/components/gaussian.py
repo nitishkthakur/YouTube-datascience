@@ -69,8 +69,13 @@ class GaussianSlice(VGroup):
         return self
 
     def appear(self, run_time: float = P.RUN_TIME) -> AnimationGroup:
-        """Draw the curve and fade the fill, as one animation of the whole slice."""
-        return AnimationGroup(Create(self.curve), FadeIn(self.fill), run_time=run_time)
+        """Draw the curve and fade the fill, as one animation of the whole slice.
+
+        `group=self` matters: the scene adds an AnimationGroup's group mobject, so without it
+        the scene would hold a throwaway Group(curve, fill) and never this slice — and any
+        updater on the slice (set_params in a sweep) would silently never run.
+        """
+        return AnimationGroup(Create(self.curve), FadeIn(self.fill), group=self, run_time=run_time)
 
     # --- geometry -----------------------------------------------------------------------
     def base_point(self, y: float) -> np.ndarray:

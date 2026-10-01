@@ -55,6 +55,8 @@ def run_manim(scene_file: Path, scene: str, out_name: str, media: Path, env: dic
               quality: str = "l") -> subprocess.CompletedProcess:
     cmd = [sys.executable, "-m", "manim", "render", f"-q{quality}", "--media_dir", str(media),
            "-o", out_name, str(scene_file), scene]
+    tier = Path(scene_file).resolve().parent.parent
+    env = {**env, "PYTHONPATH": f"{tier}:{tier.parent}:{env.get('PYTHONPATH', '')}"}
     return subprocess.run(cmd, env=env, cwd=ROOT, capture_output=True, text=True)
 
 

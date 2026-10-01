@@ -12,6 +12,17 @@ that broke, render times, and anything you were unsure about.
 
 ## Log
 
+### 2026-10-01 — Scene 3 reworked after the pedagogy critique (agent)
+Applied: no teleport (band slides 1500 → 900 in 2 s, trace grows on that pass too); equation
+terms coloured by role (X=x PARAM, μ/σ CONCEPT) and morphed term-wise (`self.eq(..., terms=,
+roles=)` + `components.equations.morph`); live ledger x / μ(x) / σ(x) / n under the equation;
+`slice.appear()` + `set_params` updater instead of `always_redraw`; static "1500 kg" label
+dropped before the slide; `self.wait(b.remaining…)` instead of a fixed HOLD (lint W1).
+Not applied (needs Nitish's words or a design call): collapse-as-conditioning at [[weighs]],
+dot-histogram collapse in 3.1, marginal drawn in a margin strip, narration additions
+(critique items 1, 2, 7, 12). The 000 test video's Scenes 2–4 show items 1 and 4 working.
+Sheet: renders/Scene03_m.sheet.png (both orientations pass the safe-area and overlap checks).
+
 ### 2026-09-30 — Pilot Scene 3 built (agent)
 Decisions (asked, Nitish chose):
 - **All 398 cars** on screen, not 60. With 60, the band at 1500 kg held 3–4 cars.

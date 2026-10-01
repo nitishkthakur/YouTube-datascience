@@ -33,7 +33,7 @@ class Ledger(VGroup):
             label = T.symbol(name, size=size, color=color)
             eq = MathTex("=", font_size=T.scaled(size), color=P.MUTED)
             value = DecimalNumber(getter(), num_decimal_places=opts.get("decimals", 1),
-                                  font_size=T.scaled(size), color=color)
+                                  group_with_commas=False, font_size=T.scaled(size), color=color)
             parts = [label, eq, value]
             if opts.get("unit"):
                 parts.append(T.label(opts["unit"], color=P.MUTED))

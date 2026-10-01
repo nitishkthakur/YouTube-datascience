@@ -34,7 +34,7 @@ def test_root_agents_md_lists_every_tool():
 def test_skills_have_matching_frontmatter():
     skills = list((ROOT / ".claude/skills").glob("*/SKILL.md"))
     assert {s.parent.name for s in skills} == {
-        "new-topic", "draft-shotlist", "build-scene", "render-review", "narration"}
+        "new-topic", "draft-shotlist", "build-scene", "render-review", "narration", "produce"}
     for s in skills:
         m = re.search(r"^---\nname: (\S+)\ndescription: .+\n---", s.read_text(), re.M)
         assert m and m.group(1) == s.parent.name, s

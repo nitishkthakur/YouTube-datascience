@@ -34,3 +34,18 @@ def test_render_all_writes_manifest(tmp_path, monkeypatch):
     assert [s["class"] for s in data["scenes"]] == ["Scene01", "Scene02"]
     for s in data["scenes"]:
         assert s["duration"] > 0.5 and s["beats_json"] and (ROOT / s["mp4"]).exists()
+
+
+def test_subset_render_merges_into_existing_manifest(tmp_path, monkeypatch):
+    manifest = render_all.manifest_path(tmp_path, "l", False)
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(json.dumps({"scenes": [
+        {"file": "/x/s01_a.py", "scene_number": 1, "class": "A", "mp4": "a.mp4", "duration": 1.0},
+        {"file": "/x/s02_b.py", "scene_number": 2, "class": "B", "mp4": "b.mp4", "duration": 2.0}]}))
+    monkeypatch.setattr(render_all, "discover", lambda tier: [
+        {"file": "/x/s01_a.py", "scene_number": 1, "class": "A"},
+        {"file": "/x/s02_b.py", "scene_number": 2, "class": "B"}])
+    monkeypatch.setattr(render_all, "render_one", lambda e, *a: {**e, "mp4": "b2.mp4", "beats_json": None, "duration": 9.0, "log": ""})
+    render_all.main([str(tmp_path), "-q", "l", "--scenes", "s02_b.py"])
+    scenes = json.loads(manifest.read_text())["scenes"]
+    assert [(s["class"], s["duration"]) for s in scenes] == [("A", 1.0), ("B", 9.0)]

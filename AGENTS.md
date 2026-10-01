@@ -209,7 +209,7 @@ The agent may propose beats and propose `[[marks]]`; it may not change narration
 
 ### 5.3 `scenes/*.py` — the code (written by the agent, reviewed by Nitish via rendered frames)
 
-One `DSScene` subclass per scene file, importing only from `manim` and `dsanim`. Every beat is a clearly commented `with self.beat("N.M", extend=…) as b:` block. Timings come from the audio (§7) — `b.until("mark")`, `b.wait_until("mark")`, `b.remaining` — not from guessed `wait()` values (lint warning W1). Single symbols that label a diagram (μ, σ) come from `typography.symbol("mu")`; anything longer is an equation and comes from `self.eq()`.
+One `DSScene` subclass per scene file, importing only from `manim`, `dsanim` and the tier's own `common/` package (shared stage: axes, data, equation tokens — so scenes never drift apart). Every beat is a clearly commented `with self.beat("N.M", extend=…) as b:` block. Timings come from the audio (§7) — `b.until("mark")`, `b.wait_until("mark")`, `b.remaining` — not from guessed `wait()` values (lint warning W1). Single symbols that label a diagram (μ, σ) come from `typography.symbol("mu")`; anything longer is an equation and comes from `self.eq()`.
 
 ---
 
@@ -225,7 +225,9 @@ Always render through `tools/render.py` — it sets PATH for TinyTeX, orientatio
 | Review | `… -q m --sheet` (720p30 + contact sheet) |
 | Final 1080p60 | `… -q h` (refuses PLACEHOLDER audio) |
 | Final 4K master | `… -q k` (refuses PLACEHOLDER audio) |
-| Shorts | `… -q h --vertical` (sets `DSANIM_VERTICAL=1`: 9:16 frame, vertical regions, text ×1.25) |
+| Shorts | `… -q h --vertical` (sets `DSANIM_VERTICAL=1`: 9:16 frame, vertical regions, text ×1.25, captions burned in) |
+| Whole tier | `uv run python tools/pipeline.py <tier> --qualities l m h --jobs 3 --sheet` → renders, assembled videos, chapters, SRT, manifest, Shorts. `tools/status.py <tier>` first and last. See `channel/pipeline.md`. |
+| Test render | add `--allow-placeholder` to render.py / render_all.py / pipeline.py: unfrozen script and placeholder voice allowed, output watermarked "PLACEHOLDER VOICE" |
 
 - Iterate at `-ql`. Never run `-qh`/`-qk` until the scene passes review at `-qm`.
 - Manim caches partial movie files; do not clear `media/` unless a render is corrupt.
@@ -278,8 +280,9 @@ A scene reported "done" without an inspected contact sheet is not done.
 
 ## 10. Shorts and multi-format output
 
-- A short is **one beat re-laid-out vertically**, not the long video cropped. The same scene class renders both ways: `tools/render.py --vertical` sets `DSANIM_VERTICAL=1`, and scenes read `self.vertical` / `self.layout` (from `dsanim.layout`) to arrange themselves. `shorts/` holds which beats become Shorts and their caption config — not copies of scene code.
+- A short is **a beat range re-laid-out vertically**, not the long video cropped. The same scene class renders both ways: `tools/render.py --vertical` sets `DSANIM_VERTICAL=1`, scenes read `self.vertical` / `self.layout` to arrange themselves, and `DSScene` burns the narration into the caption band from the beat's word timings. `shorts/chunks.yaml` declares each chunk as scenes + optional `from_beat`/`to_beat`; `tools/make_shorts.py` renders, trims on the beat timings and concatenates. Instagram feed (4:5) is not supported yet.
 - Shorts get burned-in captions (from `script.md`), larger text (minimum 40px-equivalent at 1080×1920), and open on the state change, not on setup.
+- `tools/assemble.py` writes `publish/chapters.txt` (paste into the description), `publish/subtitles.srt` (upload with the video; better than auto-captions) and `publish/manifest_<q>.json` (what went in: scenes, beats, audio hashes, versions, commit).
 - `article.md` is generated from `script.md` (prose form, same equations, same order) and reviewed by Nitish. Static frames from the contact sheet become the article's figures. The article links to the video; the video description links to the article. The canonical URL is Nitish's own site; Medium is syndication.
 
 ---
@@ -334,5 +337,5 @@ Every piece of code ships with tests in the same change. Nitish's rule: **tests 
 ## 15. Agent tooling and keeping docs current
 
 - **Hooks** (`.claude/settings.json`): after every edit to a `.py` file, `tools/lint_scenes.py --hook` runs and blocks on violations (ManimGL-isms, hex colours outside `palette.py`, inline LaTeX or Manim colour constants in topic scenes). Edits to any `script.md` require Nitish's approval.
-- **Skills** (`.claude/skills/`): `new-topic`, `draft-shotlist`, `build-scene`, `render-review`, `narration`. They encode §5–§8 step by step; Codex and other agents should follow the same steps from this file.
+- **Skills** (`.claude/skills/`): `new-topic`, `draft-shotlist`, `build-scene`, `render-review`, `narration`, `produce`. They encode §5–§8 and `channel/pipeline.md` step by step; Codex and other agents should follow the same steps from this file. Guard-rails that do not depend on Claude Code: `.pre-commit-config.yaml`, `.github/workflows/ci.yml`, and the render-time guards (frozen script, placeholder audio, safe area, overrun).
 - **Keep docs current.** When a convention, tool or structure changes, update this file (and the nested `AGENTS.md`), log it in `channel/decisions.md`, and keep `.claude/` skills consistent — in the same change.

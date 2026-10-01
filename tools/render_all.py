@@ -101,6 +101,11 @@ def main(argv: list[str] | None = None) -> Path:
 
     path = manifest_path(tier, args.quality, args.vertical)
     path.parent.mkdir(parents=True, exist_ok=True)
+    if args.scenes and path.exists():
+        # a subset render updates its entries in the existing manifest instead of replacing it
+        previous = {s["file"]: s for s in json.loads(path.read_text()).get("scenes", [])}
+        previous.update({r["file"]: r for r in results})
+        results = sorted(previous.values(), key=lambda s: s["scene_number"])
     path.write_text(json.dumps({"tier": str(tier), "quality": args.quality,
                                 "vertical": args.vertical, "scenes": results}, indent=1))
     print(f"manifest {path}")

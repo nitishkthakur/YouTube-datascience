@@ -27,8 +27,13 @@ Preconditions: script.md parses; shotlist.md for this scene is approved. One sce
            with self.beat("3.1") as b:
                ...  self.play(..., run_time=b.until("collapse"))
    ```
-   - equations only via `self.eq("<id>")`; data only via `dsanim.data`; positions via
-     `self.layout` regions; no fixed waits — use `b.until/wait_until/remaining`.
+   - equations only via `self.eq("<id>", terms=[...], roles={...})` (terms tokenise for
+     `components.equations.morph`/`reveal`; roles colour by P.<ROLE>); data only via
+     `dsanim.data`; positions via `self.layout` regions and the tier's `common/stage.py`;
+     live numbers via `components.ledger.Ledger(...).live()`; Gaussian slices via
+     `slice.appear()` and `set_params` in updaters; no fixed waits — use `b.until/wait_until/remaining`.
+   - Any instrumented/probe render must pass `--disable_caching` to Manim: cached plays skip
+     the animation code (and updaters) entirely.
    - Make it work for `self.vertical` too if the beat is listed in `shorts/`.
 4. If no audio exists yet, generate placeholders (skill `narration`) so timing is real.
 5. `uv run python tools/check_script.py <tier_dir> --scenes`

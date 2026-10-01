@@ -21,6 +21,7 @@ assets/audio/**/*.mp3
 assets/audio/**/*.flac
 assets/audio/**/*.m4a
 assets/audio/**/*.aup3
+assets/audio/**/*.words.json
 !assets/audio/README.md
 
 # --- Raw downloads that are re-fetchable (small curated CSVs ARE committed) ---

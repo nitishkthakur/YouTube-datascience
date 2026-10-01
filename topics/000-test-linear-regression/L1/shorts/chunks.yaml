@@ -1,0 +1,8 @@
+# Vertical chunks (Shorts / Reels) cut from the tier's scenes. See tools/make_shorts.py.
+chunks:
+  - name: the-line-is-a-conditional-mean
+    scenes: [s02_conditional_mean.py]
+  - name: what-the-line-leaves-out
+    scenes: [s03_spread.py, s04_distribution.py]
+    from_beat: "3.2"
+    to_beat: "4.2"

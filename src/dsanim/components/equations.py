@@ -7,7 +7,7 @@ morph must keep the terms that survive in place. Both need the equation split in
     eq = self.eq("conditional", terms=[...], roles={r"\\mu(x)": P.MODEL})
     hide(eq, [r"\\mu(x)"])            # add eq with that term invisible
     self.play(reveal(eq, [r"\\mu(x)"]), run_time=b.until("mean"))
-    self.play(morph(eq_old, eq_new, key_map={r"\\mu": r"\\mu(x)"}))
+    self.play(morph(eq_old, eq_new))
 """
 
 from __future__ import annotations
@@ -41,13 +41,14 @@ def reveal(eq: MathTex, terms: list[str], run_time: float = P.ENTRANCE_TIME) -> 
                           run_time=run_time)
 
 
-def morph(old: MathTex, new: MathTex, key_map: dict[str, str] | None = None,
-          run_time: float = P.RUN_TIME) -> TransformMatchingTex:
-    """Old -> new, matching top-level terms by their tex (plus explicit key_map renames).
+def morph(old: MathTex, new: MathTex, run_time: float = P.RUN_TIME) -> TransformMatchingTex:
+    """Old -> new, matching top-level terms by their tex.
 
-    Surviving terms slide to their new places; new terms fade in; removed terms fade out.
-    Nothing morphs glyph-by-glyph, so no half-formed symbols mid-transition. Build both
-    equations with terms=[...] so the shared terms are identical strings.
+    Surviving terms slide to their new places; removed terms fade out towards where the new
+    terms appear; new terms fade in. Nothing morphs glyph-by-glyph, so no half-formed symbols
+    mid-transition. Build both equations with terms=[...] so shared terms are identical strings.
+    (Manim 0.21's key_map uses FadeTransformPieces, which requires equal glyph counts and
+    raises otherwise — so renames are deliberately not supported here.)
     """
-    return TransformMatchingTex(old, new, key_map=key_map or {}, transform_mismatches=False,
+    return TransformMatchingTex(old, new, transform_mismatches=False,
                                 fade_transform_mismatches=False, run_time=run_time)

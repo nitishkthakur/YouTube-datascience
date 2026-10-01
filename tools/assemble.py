@@ -64,6 +64,32 @@ def duration(video: Path) -> float:
     return float(out.stdout.strip())
 
 
+def frame_at(video: Path, dest: Path, last: bool) -> Path:
+    seek = ["-sseof", "-0.2"] if last else ["-ss", "0"]
+    extra = ["-update", "1"] if last else ["-frames:v", "1"]
+    subprocess.run(["ffmpeg", "-v", "error", "-y", *seek, "-i", str(video), *extra, str(dest)], check=True)
+    return dest
+
+
+def seam_report(parts: list[Path], work: Path, threshold: float = 0.02) -> list[dict]:
+    """How much changes across each cut: fraction of pixels that differ between the last frame
+    of scene N and the first frame of scene N+1. A hard cut in a continuous layout shows up as
+    a large fraction; report it so the shot list's TRANSITION can be checked."""
+    import numpy as np
+    from PIL import Image
+
+    out = []
+    for a, b in zip(parts, parts[1:]):
+        fa = frame_at(a, work / f"{a.stem}.last.png", last=True)
+        fb = frame_at(b, work / f"{b.stem}.first.png", last=False)
+        ia = np.asarray(Image.open(fa).convert("RGB"), dtype=float)
+        ib = np.asarray(Image.open(fb).convert("RGB"), dtype=float)
+        changed = float((np.abs(ia - ib).max(axis=-1) > 24).mean()) if ia.shape == ib.shape else 1.0
+        out.append({"from": a.stem.replace(".norm", ""), "to": b.stem.replace(".norm", ""),
+                    "changed_fraction": round(changed, 4), "hard_cut": changed > threshold})
+    return out
+
+
 def chapter_stamp(t: float) -> str:
     t = int(round(t))
     h, rest = divmod(t, 3600)
@@ -147,14 +173,21 @@ def main(argv: list[str] | None = None) -> Path:
     name = f"{script.meta.get('topic', tier.parent.name)}_{script.meta.get('tier', tier.name)}_{tag}"
     out = concat(parts, tier / "renders" / f"{name}.mp4")
 
+    seams = seam_report(parts, work)
+    for s in seams:
+        flag = "HARD CUT" if s["hard_cut"] else "continuous"
+        print(f"seam {s['from']} -> {s['to']}: {s['changed_fraction']:.1%} of pixels change ({flag})")
     chapters, subs = chapters_and_subtitles(script, scenes, offsets)
     publish = tier / "publish"
     publish.mkdir(exist_ok=True)
     suffix = "_v" if args.vertical else ""
     (publish / f"chapters{suffix}.txt").write_text("\n".join(chapters) + "\n")
     captions.write_srt(subs, publish / f"subtitles{suffix}.srt")
-    write_manifest(publish / f"manifest_{tag}.json", script, scenes, parts, durations, offsets,
-                   out, args.quality, args.vertical)
+    manifest = write_manifest(publish / f"manifest_{tag}.json", script, scenes, parts, durations,
+                              offsets, out, args.quality, args.vertical)
+    data = json.loads(manifest.read_text())
+    data["seams"] = seams
+    manifest.write_text(json.dumps(data, indent=1))
 
     total = sum(durations)
     print(f"assembled {out}  ({total:.1f}s, {len(scenes)} scenes)")

@@ -123,3 +123,10 @@ def test_conditional_slice_floors_sigma_for_identical_values(axes):
 def test_slice_appear_is_one_animation(axes):
     from manim import AnimationGroup
     assert isinstance(GaussianSlice(axes, 2, 10, 2).appear(), AnimationGroup)
+
+
+def test_slice_appear_adds_the_slice_itself_to_the_scene(axes):
+    """Regression: an AnimationGroup without group=self left the slice outside the scene,
+    so updaters attached to it never ran (sample video, Scene 4)."""
+    g = GaussianSlice(axes, 2, 10, 2)
+    assert g.appear().mobject is g

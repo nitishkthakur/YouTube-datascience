@@ -12,8 +12,11 @@
 - The beat timings sidecar written by DSScene is copied next to the video as
   <name>.beats.json (used by assemble.py and make_shorts.py).
 - --sheet also writes the contact sheet (tools/contact_sheet.py) next to the video.
-- Manim's media (partial-movie cache, TeX) lives in <renders>/.media/ per tier or gallery,
-  so identical class names in different tiers never collide. Git-ignored with renders/.
+- The tier folder is put on PYTHONPATH so scenes may share code via <tier>/common/ (or the
+  concept folder's common/ — the concept dir is added too).
+- Manim's media (partial-movie cache, TeX, text SVGs) lives in <renders>/.media/<render>/ —
+  one per scene+quality+orientation, so parallel renders and identical class names in
+  different tiers never collide. Git-ignored with renders/.
 """
 
 from __future__ import annotations
@@ -55,10 +58,16 @@ def main(argv: list[str] | None = None) -> Path:
         DSANIM_FINAL=int(args.quality in "hk"),
         DSANIM_ALLOW_PLACEHOLDER=int(args.allow_placeholder),
     )
+    # the tier folder (parent of scenes/) is importable: `from common.stage import build_stage`
+    tier_dir = renders_dir(args.scene_file).parent
+    extra = f"{tier_dir}:{tier_dir.parent}"
+    env["PYTHONPATH"] = f"{extra}:{env['PYTHONPATH']}" if env.get("PYTHONPATH") else extra
 
     suffix = f"{args.scene_class}_{args.quality}{'_v' if args.vertical else ''}"
     out_dir = renders_dir(args.scene_file)
-    media = out_dir / ".media"
+    # One media dir per render: parallel renders (render_all --jobs) must not share Manim's
+    # text/TeX caches, which write and unlink temp files by content hash and race.
+    media = out_dir / ".media" / suffix
     cmd = [sys.executable, "-m", "manim", "render", f"-q{args.quality}",
            "--media_dir", str(media), "-o", suffix,
            str(args.scene_file), args.scene_class]

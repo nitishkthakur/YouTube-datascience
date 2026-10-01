@@ -3,6 +3,26 @@
 Short records of project-level decisions and why, newest first. Topic-specific decisions go
 in that topic's NOTES.md. When a decision changes AGENTS.md, note it here too.
 
+## 2026-10-01 — Pipeline layer and the test video
+- **Assembly layer built** (the structure review's #1 gap): every render writes a beat-timings
+  sidecar; `render_all` → `assemble` (audio-normalised concat, chapters, SRT, publish manifest
+  with audio hashes + tool versions + git commit, seam report) → `make_shorts` (vertical chunks by
+  scene + beat range, captions burned in) → `status` (NITISH/CODE/AGENT readiness) → `pipeline`.
+  Operating modes and the input contract: `channel/pipeline.md`.
+- **Test video `000-test-linear-regression`**: agent-written script, five scenes, built end to end
+  with a placeholder voice to find pipeline gaps. Not curriculum; numbered 000.
+- **Per-render media dirs** (`renders/.media/<render>/`): parallel renders raced on Manim's
+  shared text/TeX cache.
+- **Equations are tokenised in scene code** (`self.eq(id, terms=[...], roles={...})`), checked at
+  runtime to concatenate back to the script's LaTeX. Needed because Manim 0.21 only morphs
+  top-level parts; `key_map` dropped (raises on unequal glyph counts in 0.21).
+- **Manim gotchas pinned by tests**: AnimationGroup adds its own Group (use `group=self`);
+  non-dt updaters do not run during waits; swapping children mid-play ghosts (toggle opacity);
+  cached plays skip animation code entirely.
+- **Guard-rails outside Claude Code**: `.pre-commit-config.yaml`, `.github/workflows/ci.yml`
+  (fast tests + lint), frozen-script and placeholder guards live in the render itself.
+- **Human onboarding**: `README.md`, `tools/bootstrap.sh`.
+
 ## 2026-09-30 (later) — Pilot Scene 3
 - **Silent visual time**: `self.beat(id, extend=s)` lets a beat's animations run `s` seconds past
   its speech (sweeps, holds). Budgeted per beat in the shot list; default 0. Chosen over

@@ -35,12 +35,15 @@ NARRATION: "Now suppose I tell you the car [[weighs]] weighs 1500 kg."
 
 ### Beat 3.3 (est. 14–27s · speech ~3s · extend 9s)
 NARRATION: "Slide the weight and the whole distribution moves."
-- band label fades; band jumps back to 900 kg (1.2s), carrying the Gaussian
-- band sweeps 900 → 2200 kg over 6s via ValueTracker; highlighted points and the Gaussian
-  follow (σ(x) visibly shrinks, ≈4.9 at 900 kg → ≈1.1 at 2200 kg — the equation's σ(x))
+- band label fades; band SLIDES left 1500 → 900 kg (2s, smooth) — no teleport ⚑ — carrying
+  the Gaussian; the mean trace grows on this pass too
+- band sweeps 900 → 2200 kg over 5s (linear); highlighted points and the Gaussian follow
+  (σ(x) visibly shrinks, ≈4.9 at 900 kg → ≈1.1 at 2200 kg — the equation's σ(x)); the ledger
+  under the equation reads x, μ(x), σ(x), n live ⚑ (n falling to 9 makes the thin-data spike honest)
 - the Gaussian's mean leaves a trace, MODEL — that trace IS the regression curve
   E[Y | X = x] ⚑ (local estimate, so it curves from ~33 to ~12 mpg; not a straight line)
-- hold 3s, then indicate the trace (stroke-width pulse, MODEL)
+- hold for the rest of the budget, then indicate the trace (stroke-width pulse, MODEL)
+- equation terms are coloured by role (X=x PARAM, μ/σ CONCEPT) and morph term-wise ⚑
 
 ## Proposed marks (added to script.md, silent — approve or move)
 - 3.1 `[[values]]` before "Here is every mpg value…" — the Gaussian appears

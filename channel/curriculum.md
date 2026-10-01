@@ -6,6 +6,7 @@ renaming (e.g. 035 between 030 and 040). **Proposed — Nitish to confirm or reo
 
 | # | Concept (folder slug) | Depends on | Tiers planned | Status |
 |---|---|---|---|---|
+| 000 | test-linear-regression | — | L1 | **not curriculum**: pipeline test video, agent-written, placeholder voice |
 | 010 | distributions | — | L1 | idea |
 | 020 | conditional-distributions | 010 | L1 | idea |
 | 030 | regression-is-conditional-distribution | 020 | L1, L2 | **pilot: Scene 3 built (placeholder voice); -qh waits on recording** |
